@@ -1,0 +1,10 @@
+<svg width="54" height="54" viewBox="0 0 14.2875 14.2875" version="1.1" xmlns="http://www.w3.org/2000/svg">
+<defs><radialGradient id="abFill" cx="0.5" cy="0.5" r="0.95"><stop offset="0" stop-color="#2b2b29"/><stop offset="1" stop-color="#0f0f0e"/></radialGradient>
+<linearGradient id="abBar" x1="0" y1="0.5" x2="1" y2="0.5"><stop offset="0" stop-color="#0d0d0c"/><stop offset="0.5" stop-color="#333331"/><stop offset="1" stop-color="#0d0d0c"/></linearGradient></defs>
+<circle cx="7.143750" cy="7.143750" r="4.55" fill="url(#abFill)" stroke="#050505" stroke-width="0.12"/>
+<circle cx="7.143750" cy="7.143750" r="4.20" fill="none" stroke="#080808" stroke-width="0.24" opacity="0.55"/>
+<rect x="6.094" y="2.894" width="2.10" height="8.50" rx="0.95" fill="url(#abBar)" stroke="#060606" stroke-width="0.14"/>
+<line x1="7.143750" y1="3.54" x2="7.143750" y2="10.74" stroke="#4a4a46" stroke-width="0.22" stroke-linecap="round" opacity="0.7"/>
+<circle cx="7.183750" cy="3.86" r="0.30" fill="#0a0a0a" opacity="0.7"/>
+<circle cx="7.143750" cy="3.82" r="0.27" fill="#e8e0ce"/>
+</svg>

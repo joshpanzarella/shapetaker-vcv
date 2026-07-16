@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Dark calibration disc -->
+  <circle cx="12" cy="12" r="11.5" fill="#0a0a0a" opacity="0.45" />
+  <!-- Screwdriver slot for rotation indicator -->
+  <line x1="12" y1="2.5" x2="12" y2="7" stroke="#555555" stroke-width="1.2" stroke-linecap="round" />
+</svg>

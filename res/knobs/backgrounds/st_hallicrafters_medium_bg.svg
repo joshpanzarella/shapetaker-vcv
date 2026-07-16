@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Shapetaker Dual-Ganged Knob Background - Medium (54x54px) - Black -->
+<svg
+   version="1.0"
+   width="54px"
+   height="54px"
+   viewBox="0 0 54 54"
+   xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Dark knurled base gradient -->
+    <linearGradient id="darkBase" x1="27" y1="2" x2="27" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4a4a4a"/>
+      <stop offset="0.15" stop-color="#3a3a3a"/>
+      <stop offset="0.5" stop-color="#2a2a2a"/>
+      <stop offset="0.85" stop-color="#1a1a1a"/>
+      <stop offset="1" stop-color="#101010"/>
+    </linearGradient>
+
+    <!-- Top highlight -->
+    <linearGradient id="baseHighlight" x1="27" y1="4" x2="27" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Drop shadow -->
+  <ellipse cx="28" cy="29" rx="25" ry="24" fill="#000000" opacity="0.4"/>
+
+  <!-- Dark knurled base ring -->
+  <circle cx="27" cy="27" r="25" fill="url(#darkBase)"/>
+
+  <!-- Knurling texture on base -->
+  <g stroke="#1a1a1a" stroke-width="0.8" opacity="0.6">
+    <line x1="27" y1="3" x2="27" y2="7"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(15 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(30 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(45 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(60 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(75 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(90 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(105 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(120 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(135 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(150 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(165 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(180 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(195 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(210 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(225 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(240 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(255 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(270 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(285 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(300 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(315 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(330 27 27)"/>
+    <line x1="27" y1="3" x2="27" y2="7" transform="rotate(345 27 27)"/>
+  </g>
+
+  <!-- Highlight knurl ridges -->
+  <g stroke="#5a5a5a" stroke-width="0.4" opacity="0.25">
+    <line x1="27" y1="3.5" x2="27" y2="6.5" transform="rotate(7.5 27 27)"/>
+    <line x1="27" y1="3.5" x2="27" y2="6.5" transform="rotate(22.5 27 27)"/>
+    <line x1="27" y1="3.5" x2="27" y2="6.5" transform="rotate(37.5 27 27)"/>
+    <line x1="27" y1="3.5" x2="27" y2="6.5" transform="rotate(52.5 27 27)"/>
+    <line x1="27" y1="3.5" x2="27" y2="6.5" transform="rotate(67.5 27 27)"/>
+    <line x1="27" y1="3.5" x2="27" y2="6.5" transform="rotate(82.5 27 27)"/>
+    <line x1="27" y1="3.5" x2="27" y2="6.5" transform="rotate(97.5 27 27)"/>
+    <line x1="27" y1="3.5" x2="27" y2="6.5" transform="rotate(112.5 27 27)"/>
+  </g>
+
+  <!-- Base edge highlight -->
+  <circle cx="27" cy="27" r="25" fill="none" stroke="#606060" stroke-width="0.5" opacity="0.2"/>
+
+  <!-- Base inner shadow (where cap sits) -->
+  <circle cx="27" cy="27" r="17" fill="none" stroke="#0a0a0a" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Top highlight arc -->
+  <ellipse cx="27" cy="14" rx="16" ry="6" fill="url(#baseHighlight)"/>
+</svg>

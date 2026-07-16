@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+  width="120"
+  height="14"
+  viewBox="0 0 120 14"
+  version="1.1"
+  xmlns="http://www.w3.org/2000/svg">
+  <title>Vintage Slider Track (Horizontal)</title>
+  <desc>Recessed metal track channel for vintage slider, inspired by oscilloscope controls</desc>
+
+  <defs>
+    <!-- Track channel recess - dark inner shadow -->
+    <linearGradient id="trackRecessH" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0b0d"/>
+      <stop offset="12%" stop-color="#1a1d24"/>
+      <stop offset="50%" stop-color="#12141a"/>
+      <stop offset="88%" stop-color="#1a1d24"/>
+      <stop offset="100%" stop-color="#0a0b0d"/>
+    </linearGradient>
+
+    <!-- Inner channel depth gradient -->
+    <linearGradient id="channelDepthH" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a2d34"/>
+      <stop offset="15%" stop-color="#0f1115"/>
+      <stop offset="50%" stop-color="#1a1d24"/>
+      <stop offset="85%" stop-color="#0f1115"/>
+      <stop offset="100%" stop-color="#2a2d34"/>
+    </linearGradient>
+
+    <!-- Panel surface around track -->
+    <linearGradient id="panelSurfaceH" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#38393d"/>
+      <stop offset="50%" stop-color="#2c2e33"/>
+      <stop offset="100%" stop-color="#38393d"/>
+    </linearGradient>
+
+    <!-- Bezel highlight (top edge) -->
+    <linearGradient id="bezelHighlightH" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#656971"/>
+      <stop offset="100%" stop-color="#656971" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Bezel shadow (bottom edge) -->
+    <linearGradient id="bezelShadowH" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050609" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#050609"/>
+    </linearGradient>
+
+    <!-- Wear marks gradient -->
+    <linearGradient id="wearMarksH" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3a3d44" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#4a4e58" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#3a3d44" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Panel surface background -->
+  <rect
+    x="0"
+    y="0"
+    width="120"
+    height="14"
+    fill="url(#panelSurfaceH)"/>
+
+  <!-- Main track channel -->
+  <rect
+    x="2"
+    y="3"
+    width="116"
+    height="8"
+    rx="4"
+    fill="url(#trackRecessH)"
+    stroke="#000000"
+    stroke-width="0.5"
+    opacity="0.95"/>
+
+  <!-- Inner channel depth -->
+  <rect
+    x="3"
+    y="4"
+    width="114"
+    height="6"
+    rx="3"
+    fill="url(#channelDepthH)"/>
+
+  <!-- Top bezel highlight -->
+  <rect
+    x="3"
+    y="3"
+    width="114"
+    height="2.5"
+    rx="1.5"
+    fill="url(#bezelHighlightH)"
+    opacity="0.35"/>
+
+  <!-- Bottom bezel shadow -->
+  <rect
+    x="3"
+    y="8.5"
+    width="114"
+    height="2.5"
+    rx="1.5"
+    fill="url(#bezelShadowH)"
+    opacity="0.5"/>
+
+  <!-- Center guide rail -->
+  <rect
+    x="5"
+    y="6.5"
+    width="110"
+    height="1"
+    fill="#0a0b0d"
+    opacity="0.6"/>
+
+  <!-- Subtle top rail -->
+  <rect
+    x="5"
+    y="4.5"
+    width="110"
+    height="0.6"
+    fill="#1a1d24"
+    opacity="0.4"/>
+
+  <!-- Subtle bottom rail -->
+  <rect
+    x="5"
+    y="8.9"
+    width="110"
+    height="0.6"
+    fill="#1a1d24"
+    opacity="0.4"/>
+
+  <!-- Wear marks in center (lighter area from use) -->
+  <rect
+    x="35"
+    y="5"
+    width="50"
+    height="4"
+    rx="2"
+    fill="url(#wearMarksH)"
+    opacity="0.4"/>
+
+  <!-- Left end cap detail -->
+  <ellipse
+    cx="4"
+    cy="7"
+    rx="1.5"
+    ry="3"
+    fill="#0a0b0d"
+    opacity="0.7"/>
+
+  <!-- Right end cap detail -->
+  <ellipse
+    cx="116"
+    cy="7"
+    rx="1.5"
+    ry="3"
+    fill="#0a0b0d"
+    opacity="0.7"/>
+
+  <!-- Subtle scratches from age/use -->
+  <line
+    x1="25"
+    y1="5"
+    x2="45"
+    y2="5.2"
+    stroke="#505460"
+    stroke-width="0.15"
+    opacity="0.25"/>
+
+  <line
+    x1="40"
+    y1="9"
+    x2="70"
+    y2="9.2"
+    stroke="#505460"
+    stroke-width="0.15"
+    opacity="0.2"/>
+
+  <line
+    x1="60"
+    y1="6"
+    x2="95"
+    y2="6.3"
+    stroke="#505460"
+    stroke-width="0.15"
+    opacity="0.18"/>
+</svg>

@@ -1,0 +1,20 @@
+<svg width="18" height="120" viewBox="0 0 18 120" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="slSlot" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0a0908"/><stop offset="1" stop-color="#26231e"/></linearGradient>
+<linearGradient id="gSlotSh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#060505" stop-opacity="0.80"/><stop offset="1" stop-color="#060505" stop-opacity="0"/></linearGradient></defs>
+<rect x="6.0" y="4" width="6.0" height="112" rx="2.6" fill="url(#slSlot)" stroke="#0d0b08" stroke-width="0.5"/>
+<rect x="6.0" y="4.5" width="6.0" height="111" rx="0.9" fill="url(#gSlotSh)"/>
+<line x1="11.50" y1="6" x2="11.50" y2="114" stroke="#6f6753" stroke-width="0.4" opacity="0.75"/>
+<line x1="6.25" y1="5" x2="6.25" y2="115" stroke="#000000" stroke-width="0.4" opacity="0.7"/>
+<line x1="13.2" y1="6.00" x2="15.2" y2="6.00" stroke="#d8cdb0" stroke-width="0.45" stroke-linecap="round" opacity="0.85"/>
+<line x1="13.2" y1="16.80" x2="14.2" y2="16.80" stroke="#d8cdb0" stroke-width="0.3" stroke-linecap="round" opacity="0.5"/>
+<line x1="13.2" y1="27.60" x2="14.2" y2="27.60" stroke="#d8cdb0" stroke-width="0.3" stroke-linecap="round" opacity="0.5"/>
+<line x1="13.2" y1="38.40" x2="14.2" y2="38.40" stroke="#d8cdb0" stroke-width="0.3" stroke-linecap="round" opacity="0.5"/>
+<line x1="13.2" y1="49.20" x2="14.2" y2="49.20" stroke="#d8cdb0" stroke-width="0.3" stroke-linecap="round" opacity="0.5"/>
+<line x1="13.2" y1="60.00" x2="15.2" y2="60.00" stroke="#d8cdb0" stroke-width="0.45" stroke-linecap="round" opacity="0.85"/>
+<line x1="13.2" y1="70.80" x2="14.2" y2="70.80" stroke="#d8cdb0" stroke-width="0.3" stroke-linecap="round" opacity="0.5"/>
+<line x1="13.2" y1="81.60" x2="14.2" y2="81.60" stroke="#d8cdb0" stroke-width="0.3" stroke-linecap="round" opacity="0.5"/>
+<line x1="13.2" y1="92.40" x2="14.2" y2="92.40" stroke="#d8cdb0" stroke-width="0.3" stroke-linecap="round" opacity="0.5"/>
+<line x1="13.2" y1="103.20" x2="14.2" y2="103.20" stroke="#d8cdb0" stroke-width="0.3" stroke-linecap="round" opacity="0.5"/>
+<line x1="13.2" y1="114.00" x2="15.2" y2="114.00" stroke="#d8cdb0" stroke-width="0.45" stroke-linecap="round" opacity="0.85"/>
+</svg>

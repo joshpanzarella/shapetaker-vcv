@@ -1,0 +1,631 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="20"
+   height="20"
+   viewBox="0 0 20 20"
+   version="1.1"
+   id="svg50"
+   sodipodi:docname="st_bnc_connector.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview50"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="26.927529"
+     inkscape:cx="6.5546304"
+     inkscape:cy="10.918195"
+     inkscape:window-width="1800"
+     inkscape:window-height="1102"
+     inkscape:window-x="0"
+     inkscape:window-y="39"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg50" />
+  <!-- Aged Nickel BNC jack: vintage Tektronix-style female panel connector.
+       Anatomy: knurled retaining nut, nickel shell, two bayonet lugs,
+       PTFE dielectric aged to cream, gold center socket. -->
+  <defs
+     id="defs8">
+    <radialGradient
+       id="agedShell"
+       cx="0.38"
+       cy="0.34"
+       r="0.85">
+      <stop
+         offset="0"
+         stop-color="#a49e8e"
+         id="stop1" />
+      <stop
+         offset="0.55"
+         stop-color="#746e60"
+         id="stop2" />
+      <stop
+         offset="1"
+         stop-color="#3b3831"
+         id="stop3" />
+    </radialGradient>
+    <radialGradient
+       id="agedPtfe"
+       cx="0.40"
+       cy="0.36"
+       r="0.9">
+      <stop
+         offset="0"
+         stop-color="#c9bd9c"
+         id="stop4" />
+      <stop
+         offset="0.75"
+         stop-color="#a89c7b"
+         id="stop5" />
+      <stop
+         offset="1"
+         stop-color="#7b7056"
+         id="stop6" />
+    </radialGradient>
+    <radialGradient
+       id="agedGold"
+       cx="9.5056"
+       cy="9.3408"
+       r="3.708"
+       fx="9.5056"
+       fy="9.3408"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.2170621,0,0,1.2170621,-2.1706207,-2.1706207)">
+      <stop
+         offset="0"
+         stop-color="#b6975a"
+         id="stop7" />
+      <stop
+         offset="1"
+         stop-color="#594720"
+         id="stop8" />
+    </radialGradient>
+    <filter
+       inkscape:collect="always"
+       style="color-interpolation-filters:sRGB"
+       id="filter97"
+       x="-0.2348591"
+       y="-0.26421649"
+       width="1.4697182"
+       height="1.528433">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="0.14963315"
+         id="feGaussianBlur97" />
+    </filter>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#agedShell"
+       id="radialGradient97"
+       cx="7.936"
+       cy="7.2480001"
+       r="14.62"
+       fx="7.936"
+       fy="7.2480001"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.0086364,0,0,1.0086364,-0.08636446,-0.08636446)" />
+  <linearGradient id="gWallDark" x1="4.5" y1="4.5" x2="15.5" y2="15.5" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#000000" stop-opacity="0.60"/><stop offset="1" stop-color="#000000" stop-opacity="0"/></linearGradient>
+<linearGradient id="gWallLit" x1="4.5" y1="4.5" x2="15.5" y2="15.5" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#6f6753" stop-opacity="0"/><stop offset="1" stop-color="#6f6753" stop-opacity="0.55"/></linearGradient>
+<radialGradient id="gOcc" cx="10" cy="10" r="7.15" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#000000" stop-opacity="0.80"/></radialGradient>
+<linearGradient id="gFloor" x1="5" y1="5" x2="13.5" y2="13.5" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#1b1712" stop-opacity="0.50"/><stop offset="1" stop-color="#1b1712" stop-opacity="0"/></linearGradient>
+<radialGradient id="gCbore" cx="10" cy="10" r="3.4" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#000000" stop-opacity="0.60"/></radialGradient>
+</defs>
+  <circle
+     cx="10"
+     cy="10"
+     r="9.98"
+     fill="#211f1a"
+     id="knurl-base" />
+  <path
+     d="M 18.68 10.08 L 19.96 10.09 L 19.94 10.65 L 18.66 10.57 Z"
+     fill="#514c42"
+     id="path1" />
+  <path
+     d="M 18.66 10.57 L 19.94 10.65 L 19.89 11.21 L 18.62 11.05 Z"
+     fill="#302c25"
+     id="path2" />
+  <path
+     d="M 18.59 11.21 L 19.86 11.39 L 19.77 11.94 L 18.51 11.69 Z"
+     fill="#4f4a40"
+     id="path3" />
+  <path
+     d="M 18.51 11.69 L 19.77 11.94 L 19.64 12.49 L 18.40 12.17 Z"
+     fill="#2f2b24"
+     id="path4" />
+  <path
+     d="M 18.36 12.32 L 19.60 12.67 L 19.43 13.20 L 18.22 12.79 Z"
+     fill="#4d483f"
+     id="path5" />
+  <path
+     d="M 18.22 12.79 L 19.43 13.20 L 19.24 13.73 L 18.05 13.25 Z"
+     fill="#2e2a23"
+     id="path6" />
+  <path
+     d="M 17.99 13.40 L 19.17 13.90 L 18.93 14.41 L 17.78 13.84 Z"
+     fill="#4c473e"
+     id="path7" />
+  <path
+     d="M 17.78 13.84 L 18.93 14.41 L 18.67 14.90 L 17.56 14.27 Z"
+     fill="#2d2a22"
+     id="path8" />
+  <path
+     d="M 17.48 14.41 L 18.58 15.06 L 18.28 15.53 L 17.22 14.82 Z"
+     fill="#4b463d"
+     id="path9" />
+  <path
+     d="M 17.22 14.82 L 18.28 15.53 L 17.96 15.99 L 16.93 15.22 Z"
+     fill="#2d2922"
+     id="path10" />
+  <path
+     d="M 16.84 15.35 L 17.85 16.14 L 17.49 16.57 L 16.53 15.72 Z"
+     fill="#4b463d"
+     id="path11" />
+  <path
+     d="M 16.53 15.72 L 17.49 16.57 L 17.11 16.98 L 16.19 16.08 Z"
+     fill="#2c2922"
+     id="path12" />
+  <path
+     d="M 16.08 16.19 L 16.98 17.11 L 16.57 17.49 L 15.72 16.53 Z"
+     fill="#4b463d"
+     id="path13" />
+  <path
+     d="M 15.72 16.53 L 16.57 17.49 L 16.14 17.85 L 15.35 16.84 Z"
+     fill="#2c2922"
+     id="path14" />
+  <path
+     d="M 15.22 16.93 L 15.99 17.96 L 15.53 18.28 L 14.82 17.22 Z"
+     fill="#4b463d"
+     id="path15" />
+  <path
+     d="M 14.82 17.22 L 15.53 18.28 L 15.06 18.58 L 14.41 17.48 Z"
+     fill="#2d2922"
+     id="path16" />
+  <path
+     d="M 14.27 17.56 L 14.90 18.67 L 14.41 18.93 L 13.84 17.78 Z"
+     fill="#4c473e"
+     id="path17" />
+  <path
+     d="M 13.84 17.78 L 14.41 18.93 L 13.90 19.17 L 13.40 17.99 Z"
+     fill="#2d2a22"
+     id="path18" />
+  <path
+     d="M 13.25 18.05 L 13.73 19.24 L 13.20 19.43 L 12.79 18.22 Z"
+     fill="#4d483f"
+     id="path19" />
+  <path
+     d="M 12.79 18.22 L 13.20 19.43 L 12.67 19.60 L 12.32 18.36 Z"
+     fill="#2e2a23"
+     id="path20" />
+  <path
+     d="M 12.17 18.40 L 12.49 19.64 L 11.94 19.77 L 11.69 18.51 Z"
+     fill="#4f4a40"
+     id="path21" />
+  <path
+     d="M 11.69 18.51 L 11.94 19.77 L 11.39 19.86 L 11.21 18.59 Z"
+     fill="#2f2b24"
+     id="path22" />
+  <path
+     d="M 11.05 18.62 L 11.21 19.89 L 10.65 19.94 L 10.57 18.66 Z"
+     fill="#514c42"
+     id="path23" />
+  <path
+     d="M 10.57 18.66 L 10.65 19.94 L 10.09 19.96 L 10.08 18.68 Z"
+     fill="#302c25"
+     id="path24" />
+  <path
+     d="M 9.92 18.68 L 9.91 19.96 L 9.35 19.94 L 9.43 18.66 Z"
+     fill="#534e44"
+     id="path25" />
+  <path
+     d="M 9.43 18.66 L 9.35 19.94 L 8.79 19.89 L 8.95 18.62 Z"
+     fill="#312e26"
+     id="path26" />
+  <path
+     d="M 8.79 18.59 L 8.61 19.86 L 8.06 19.77 L 8.31 18.51 Z"
+     fill="#565146"
+     id="path27" />
+  <path
+     d="M 8.31 18.51 L 8.06 19.77 L 7.51 19.64 L 7.83 18.40 Z"
+     fill="#332f27"
+     id="path28" />
+  <path
+     d="M 7.68 18.36 L 7.33 19.60 L 6.80 19.43 L 7.21 18.22 Z"
+     fill="#595349"
+     id="path29" />
+  <path
+     d="M 7.21 18.22 L 6.80 19.43 L 6.27 19.24 L 6.75 18.05 Z"
+     fill="#353128"
+     id="path30" />
+  <path
+     d="M 6.60 17.99 L 6.10 19.17 L 5.59 18.93 L 6.16 17.78 Z"
+     fill="#5c564b"
+     id="path31" />
+  <path
+     d="M 6.16 17.78 L 5.59 18.93 L 5.10 18.67 L 5.73 17.56 Z"
+     fill="#36332a"
+     id="path32" />
+  <path
+     d="M 5.59 17.48 L 4.94 18.58 L 4.47 18.28 L 5.18 17.22 Z"
+     fill="#5f594e"
+     id="path33" />
+  <path
+     d="M 5.18 17.22 L 4.47 18.28 L 4.01 17.96 L 4.78 16.93 Z"
+     fill="#38342b"
+     id="path34" />
+  <path
+     d="M 4.65 16.84 L 3.86 17.85 L 3.43 17.49 L 4.28 16.53 Z"
+     fill="#625d51"
+     id="path35" />
+  <path
+     d="M 4.28 16.53 L 3.43 17.49 L 3.02 17.11 L 3.92 16.19 Z"
+     fill="#3a362d"
+     id="path36" />
+  <path
+     d="M 3.81 16.08 L 2.89 16.98 L 2.51 16.57 L 3.47 15.72 Z"
+     fill="#666054"
+     id="path37" />
+  <path
+     d="M 3.47 15.72 L 2.51 16.57 L 2.15 16.14 L 3.16 15.35 Z"
+     fill="#3c382e"
+     id="path38" />
+  <path
+     d="M 3.07 15.22 L 2.04 15.99 L 1.72 15.53 L 2.78 14.82 Z"
+     fill="#696357"
+     id="path39" />
+  <path
+     d="M 2.78 14.82 L 1.72 15.53 L 1.42 15.06 L 2.52 14.41 Z"
+     fill="#3e3a30"
+     id="path40" />
+  <path
+     d="M 2.44 14.27 L 1.33 14.90 L 1.07 14.41 L 2.22 13.84 Z"
+     fill="#6c6659"
+     id="path41" />
+  <path
+     d="M 2.22 13.84 L 1.07 14.41 L 0.83 13.90 L 2.01 13.40 Z"
+     fill="#403c31"
+     id="path42" />
+  <path
+     d="M 1.95 13.25 L 0.76 13.73 L 0.57 13.20 L 1.78 12.79 Z"
+     fill="#6f695c"
+     id="path43" />
+  <path
+     d="M 1.78 12.79 L 0.57 13.20 L 0.40 12.67 L 1.64 12.32 Z"
+     fill="#423d33"
+     id="path44" />
+  <path
+     d="M 1.60 12.17 L 0.36 12.49 L 0.23 11.94 L 1.49 11.69 Z"
+     fill="#726c5e"
+     id="path45" />
+  <path
+     d="M 1.49 11.69 L 0.23 11.94 L 0.14 11.39 L 1.41 11.21 Z"
+     fill="#433f34"
+     id="path46" />
+  <path
+     d="M 1.38 11.05 L 0.11 11.21 L 0.06 10.65 L 1.34 10.57 Z"
+     fill="#756e61"
+     id="path47" />
+  <path
+     d="M 1.34 10.57 L 0.06 10.65 L 0.04 10.09 L 1.32 10.08 Z"
+     fill="#454035"
+     id="path48" />
+  <path
+     d="M 1.32 9.92 L 0.04 9.91 L 0.06 9.35 L 1.34 9.43 Z"
+     fill="#777163"
+     id="path49" />
+  <path
+     d="M 1.34 9.43 L 0.06 9.35 L 0.11 8.79 L 1.38 8.95 Z"
+     fill="#464236"
+     id="path50" />
+  <path
+     d="M 1.41 8.79 L 0.14 8.61 L 0.23 8.06 L 1.49 8.31 Z"
+     fill="#797364"
+     id="path51" />
+  <path
+     d="M 1.49 8.31 L 0.23 8.06 L 0.36 7.51 L 1.60 7.83 Z"
+     fill="#474337"
+     id="path52" />
+  <path
+     d="M 1.64 7.68 L 0.40 7.33 L 0.57 6.80 L 1.78 7.21 Z"
+     fill="#7b7466"
+     id="path53" />
+  <path
+     d="M 1.78 7.21 L 0.57 6.80 L 0.76 6.27 L 1.95 6.75 Z"
+     fill="#484438"
+     id="path54" />
+  <path
+     d="M 2.01 6.60 L 0.83 6.10 L 1.07 5.59 L 2.22 6.16 Z"
+     fill="#7c7567"
+     id="path55" />
+  <path
+     d="M 2.22 6.16 L 1.07 5.59 L 1.33 5.10 L 2.44 5.73 Z"
+     fill="#494539"
+     id="path56" />
+  <path
+     d="M 2.52 5.59 L 1.42 4.94 L 1.72 4.47 L 2.78 5.18 Z"
+     fill="#7d7668"
+     id="path57" />
+  <path
+     d="M 2.78 5.18 L 1.72 4.47 L 2.04 4.01 L 3.07 4.78 Z"
+     fill="#494539"
+     id="path58" />
+  <path
+     d="M 3.16 4.65 L 2.15 3.86 L 2.51 3.43 L 3.47 4.28 Z"
+     fill="#7d7768"
+     id="path59" />
+  <path
+     d="M 3.47 4.28 L 2.51 3.43 L 2.89 3.02 L 3.81 3.92 Z"
+     fill="#4a4539"
+     id="path60" />
+  <path
+     d="M 3.92 3.81 L 3.02 2.89 L 3.43 2.51 L 4.28 3.47 Z"
+     fill="#7d7768"
+     id="path61" />
+  <path
+     d="M 4.28 3.47 L 3.43 2.51 L 3.86 2.15 L 4.65 3.16 Z"
+     fill="#4a4539"
+     id="path62" />
+  <path
+     d="M 4.78 3.07 L 4.01 2.04 L 4.47 1.72 L 5.18 2.78 Z"
+     fill="#7d7668"
+     id="path63" />
+  <path
+     d="M 5.18 2.78 L 4.47 1.72 L 4.94 1.42 L 5.59 2.52 Z"
+     fill="#494539"
+     id="path64" />
+  <path
+     d="M 5.73 2.44 L 5.10 1.33 L 5.59 1.07 L 6.16 2.22 Z"
+     fill="#7c7567"
+     id="path65" />
+  <path
+     d="M 6.16 2.22 L 5.59 1.07 L 6.10 0.83 L 6.60 2.01 Z"
+     fill="#494539"
+     id="path66" />
+  <path
+     d="M 6.75 1.95 L 6.27 0.76 L 6.80 0.57 L 7.21 1.78 Z"
+     fill="#7b7466"
+     id="path67" />
+  <path
+     d="M 7.21 1.78 L 6.80 0.57 L 7.33 0.40 L 7.68 1.64 Z"
+     fill="#484438"
+     id="path68" />
+  <path
+     d="M 7.83 1.60 L 7.51 0.36 L 8.06 0.23 L 8.31 1.49 Z"
+     fill="#797364"
+     id="path69" />
+  <path
+     d="M 8.31 1.49 L 8.06 0.23 L 8.61 0.14 L 8.79 1.41 Z"
+     fill="#474337"
+     id="path70" />
+  <path
+     d="M 8.95 1.38 L 8.79 0.11 L 9.35 0.06 L 9.43 1.34 Z"
+     fill="#777163"
+     id="path71" />
+  <path
+     d="M 9.43 1.34 L 9.35 0.06 L 9.91 0.04 L 9.92 1.32 Z"
+     fill="#464236"
+     id="path72" />
+  <path
+     d="M 10.08 1.32 L 10.09 0.04 L 10.65 0.06 L 10.57 1.34 Z"
+     fill="#756e61"
+     id="path73" />
+  <path
+     d="M 10.57 1.34 L 10.65 0.06 L 11.21 0.11 L 11.05 1.38 Z"
+     fill="#454035"
+     id="path74" />
+  <path
+     d="M 11.21 1.41 L 11.39 0.14 L 11.94 0.23 L 11.69 1.49 Z"
+     fill="#726c5e"
+     id="path75" />
+  <path
+     d="M 11.69 1.49 L 11.94 0.23 L 12.49 0.36 L 12.17 1.60 Z"
+     fill="#433f34"
+     id="path76" />
+  <path
+     d="M 12.32 1.64 L 12.67 0.40 L 13.20 0.57 L 12.79 1.78 Z"
+     fill="#6f695c"
+     id="path77" />
+  <path
+     d="M 12.79 1.78 L 13.20 0.57 L 13.73 0.76 L 13.25 1.95 Z"
+     fill="#423d33"
+     id="path78" />
+  <path
+     d="M 13.40 2.01 L 13.90 0.83 L 14.41 1.07 L 13.84 2.22 Z"
+     fill="#6c6659"
+     id="path79" />
+  <path
+     d="M 13.84 2.22 L 14.41 1.07 L 14.90 1.33 L 14.27 2.44 Z"
+     fill="#403c31"
+     id="path80" />
+  <path
+     d="M 14.41 2.52 L 15.06 1.42 L 15.53 1.72 L 14.82 2.78 Z"
+     fill="#696357"
+     id="path81" />
+  <path
+     d="M 14.82 2.78 L 15.53 1.72 L 15.99 2.04 L 15.22 3.07 Z"
+     fill="#3e3a30"
+     id="path82" />
+  <path
+     d="M 15.35 3.16 L 16.14 2.15 L 16.57 2.51 L 15.72 3.47 Z"
+     fill="#666054"
+     id="path83" />
+  <path
+     d="M 15.72 3.47 L 16.57 2.51 L 16.98 2.89 L 16.08 3.81 Z"
+     fill="#3c382e"
+     id="path84" />
+  <path
+     d="M 16.19 3.92 L 17.11 3.02 L 17.49 3.43 L 16.53 4.28 Z"
+     fill="#625d51"
+     id="path85" />
+  <path
+     d="M 16.53 4.28 L 17.49 3.43 L 17.85 3.86 L 16.84 4.65 Z"
+     fill="#3a362d"
+     id="path86" />
+  <path
+     d="M 16.93 4.78 L 17.96 4.01 L 18.28 4.47 L 17.22 5.18 Z"
+     fill="#5f594e"
+     id="path87" />
+  <path
+     d="M 17.22 5.18 L 18.28 4.47 L 18.58 4.94 L 17.48 5.59 Z"
+     fill="#38342b"
+     id="path88" />
+  <path
+     d="M 17.56 5.73 L 18.67 5.10 L 18.93 5.59 L 17.78 6.16 Z"
+     fill="#5c564b"
+     id="path89" />
+  <path
+     d="M 17.78 6.16 L 18.93 5.59 L 19.17 6.10 L 17.99 6.60 Z"
+     fill="#36332a"
+     id="path90" />
+  <path
+     d="M 18.05 6.75 L 19.24 6.27 L 19.43 6.80 L 18.22 7.21 Z"
+     fill="#595349"
+     id="path91" />
+  <path
+     d="M 18.22 7.21 L 19.43 6.80 L 19.60 7.33 L 18.36 7.68 Z"
+     fill="#353128"
+     id="path92" />
+  <path
+     d="M 18.40 7.83 L 19.64 7.51 L 19.77 8.06 L 18.51 8.31 Z"
+     fill="#565146"
+     id="path93" />
+  <path
+     d="M 18.51 8.31 L 19.77 8.06 L 19.86 8.61 L 18.59 8.79 Z"
+     fill="#332f27"
+     id="path94" />
+  <path
+     d="M 18.62 8.95 L 19.89 8.79 L 19.94 9.35 L 18.66 9.43 Z"
+     fill="#534e44"
+     id="path95" />
+  <path
+     d="M 18.66 9.43 L 19.94 9.35 L 19.96 9.91 L 18.68 9.92 Z"
+     fill="#312e26"
+     id="path96" />
+  <circle
+     cx="10"
+     cy="10"
+     r="9.97"
+     fill="none"
+     stroke="#14110e"
+     stroke-width="0.18"
+     id="circle96" />
+  <circle
+     cx="10"
+     cy="10"
+     r="8.66"
+     fill="none"
+     stroke="#1a1713"
+     stroke-width="0.42"
+     id="circle97" />
+  <rect
+     x="0.10"
+     y="9.15"
+     width="2.5"
+     height="1.7"
+     rx="0.6"
+     fill="url(#agedShell)"
+     stroke="#2b2822"
+     stroke-width="0.22"
+     id="rect43" />
+  <rect
+     x="17.40"
+     y="9.15"
+     width="2.5"
+     height="1.7"
+     rx="0.6"
+     fill="url(#agedShell)"
+     stroke="#2b2822"
+     stroke-width="0.22"
+     id="rect44" />
+  <circle
+     cx="10"
+     cy="10"
+     r="8.5229778"
+     fill="url(#agedShell)"
+     stroke="#282520"
+     stroke-width="0.302591"
+     id="circle44"
+     style="display:inline;fill:url(#radialGradient97)" />
+  <circle
+     cx="10"
+     cy="10"
+     r="7.6184607"
+     fill="#332f28"
+     id="circle45"
+     style="stroke-width:1.09618" />
+  <circle
+     cx="10"
+     cy="10"
+     r="7.1670079"
+     fill="#171410"
+     id="circle46"
+     style="stroke-width:1.12866" />
+  <!-- Recess depth: rim occlusion, lit lower-right wall, dark upper-left wall -->
+  <path d="M 10.00 2.850 A 7.150 7.150 0 1 0 10.00 2.8500 Z M 10.00 3.950 A 6.050 6.050 0 1 1 10.00 3.9500 Z" fill-rule="evenodd" fill="url(#gOcc)"/>
+  <path d="M 10.00 2.900 A 7.100 7.100 0 1 0 10.00 2.9000 Z M 10.00 4.500 A 5.500 5.500 0 1 1 10.00 4.5000 Z" fill-rule="evenodd" fill="url(#gWallLit)"/>
+  <path d="M 10.00 2.900 A 7.100 7.100 0 1 0 10.00 2.9000 Z M 10.00 4.500 A 5.500 5.500 0 1 1 10.00 4.5000 Z" fill-rule="evenodd" fill="url(#gWallDark)"/>
+  <path
+     d="M 17.34 11.29 A 7.45 7.45 0 0 1 11.29 17.34"
+     fill="none"
+     stroke="#a9a18d"
+     stroke-width="0.45"
+     stroke-linecap="round"
+     opacity="0.50"
+     id="path99" />
+  <circle
+     cx="10"
+     cy="10"
+     r="5.45"
+     fill="url(#agedPtfe)"
+     stroke="#5d5340"
+     stroke-width="0.28"
+     id="circle47" />
+  <circle cx="10" cy="10" r="5.35" fill="url(#gFloor)"/>
+  <path d="M 10.00 7.100 A 2.900 2.900 0 1 0 10.00 7.1000 Z M 10.00 7.700 A 2.300 2.300 0 1 1 10.00 7.7000 Z" fill-rule="evenodd" fill="url(#gCbore)"/>
+  <circle
+     cx="10"
+     cy="10"
+     r="2.373271"
+     fill="url(#agedGold)"
+     stroke="#3c3015"
+     stroke-width="0.267754"
+     id="circle48"
+     style="fill:url(#agedGold)" />
+  <circle
+     cx="10"
+     cy="10"
+     r="1.9103965"
+     fill="#080605"
+     id="circle49"
+     style="stroke-width:1.70571" />
+  <path
+     d="M 11.45 10.39 A 1.50 1.50 0 0 1 10.39 11.45"
+     fill="none"
+     stroke="#6b5f3f"
+     stroke-width="0.45"
+     stroke-linecap="round"
+     opacity="0.55"
+     id="path101" />
+  <path
+     d="M 3.4,5.6 A 8,8 0 0 1 6.1,3.2"
+     fill="none"
+     stroke="#a89f8a"
+     stroke-width="0.55"
+     stroke-linecap="round"
+     opacity="0.55"
+     id="path102"
+     style="display:none;opacity:0.500816;mix-blend-mode:normal;filter:url(#filter97)" />
+</svg>
