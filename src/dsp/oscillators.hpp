@@ -127,21 +127,23 @@ public:
     static float pwmWithPolyBLEP(float phase, float pulseWidth, float dt) {
         float output = (phase < pulseWidth) ? 1.f : -1.f;
 
-        // Rising edge at phase = 0 — post-edge correction
+        // Rising edge at phase = 0: the residual is added, pulling the naive
+        // +1 down toward the band-limited midpoint (polyBLEP(0+) = -1).
         if (phase < dt) {
-            output -= polyBLEP(phase / dt);
+            output += polyBLEP(phase / dt);
         }
         // Rising edge at phase = 0 — pre-edge correction (phase wrapping from ~1 to ~0)
         if (phase > 1.f - dt) {
-            output -= polyBLEP((phase - 1.f) / dt);
+            output += polyBLEP((phase - 1.f) / dt);
         }
-        // Falling edge at phase = pulseWidth — post-edge correction
+        // Falling edge at phase = pulseWidth — post-edge correction (subtracted:
+        // the naive value is -1 and must be pulled up toward the midpoint)
         if (phase > pulseWidth && phase < pulseWidth + dt) {
-            output += polyBLEP((phase - pulseWidth) / dt);
+            output -= polyBLEP((phase - pulseWidth) / dt);
         }
         // Falling edge at phase = pulseWidth — pre-edge correction
         if (phase > pulseWidth - dt && phase < pulseWidth) {
-            output += polyBLEP((phase - pulseWidth) / dt);
+            output -= polyBLEP((phase - pulseWidth) / dt);
         }
 
         return output;

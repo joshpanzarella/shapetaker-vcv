@@ -187,7 +187,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
     std::atomic<float> vintageAmount = {0.5f};
 
     std::atomic<int> oscilloscopeTheme = {shapetaker::ui::ThemeManager::DisplayTheme::PHOSPHOR};
-    std::atomic<int> oscilloscopeDisplayMode = {1}; // 0 = X-Y Lissajous, 1 = triggered waveform
+    std::atomic<int> oscilloscopeDisplayMode = {0}; // 0 = X-Y Lissajous, 1 = triggered waveform
     mutable std::atomic<bool> useSharedOscilloscopeTheme = {true};
     mutable std::atomic<int> sharedOscilloscopeThemeRevisionSeen = {0};
     std::atomic<bool> pendingFilterReset = {false};
