@@ -16,6 +16,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
     static constexpr float CV_FINE_SCALE          = 1.f / 50.f;
     static constexpr float CV_SHAPE_SCALE         = 1.f / 5.f;
     static constexpr float CV_XFADE_SCALE         = 1.f / 10.f;
+    static constexpr float CV_REV_CHANCE_SCALE    = 1.f / 10.f;
     static constexpr float OUTPUT_GAIN            = 5.f;
     static constexpr float NOISE_V_PEAK           = 0.45f;
     static constexpr float UINT32_NORM            = 1.f / 4294967296.f; // 1 / 2^32
@@ -68,7 +69,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
         VOICE_RATIO_PARAM,
         VOICE_ASYM_PARAM,
         VOICE_WIDTH_PARAM,
-        VOICE_DEPTH_ATTEN_PARAM,
+        REV_CHANCE_ATTEN_PARAM,
         REV_CHANCE_PARAM,
         PARAMS_LEN
     };
@@ -80,7 +81,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
         SHAPE1_CV_INPUT,
         SHAPE2_CV_INPUT,
         XFADE_CV_INPUT,
-        VOICE_DEPTH_CV_INPUT,
+        REV_CHANCE_CV_INPUT,
         INPUTS_LEN
     };
     enum OutputId {
@@ -221,8 +222,8 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
     float cachedVoiceRatio = 2.f;
     float cachedVoiceAsym = 0.35f;
     float cachedVoiceWidth = 0.5f;
-    float cachedVoiceDepthAtten = 0.f;
-    bool cachedVoiceDepthCVConnected = false;
+    float cachedRevChanceAtten = 0.f;
+    bool cachedRevChanceCVConnected = false;
     bool cachedSync1 = false;
     bool cachedSync2 = false;
     bool cachedMutualRev = false;
@@ -513,7 +514,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
                      {"\u00d70.5", "\u00d71", "\u00d71.5", "\u00d72", "\u00d73", "\u00d74", "\u00d75", "\u00d77"});
         ParameterHelper::configGain(this, VOICE_ASYM_PARAM, "slope asymmetry", 0.35f);
         configParam(VOICE_WIDTH_PARAM, 0.f, 1.f, 0.5f, "stereo width", "%", 0.f, 200.f);
-        ParameterHelper::configAttenuverter(this, VOICE_DEPTH_ATTEN_PARAM, "voice depth cv");
+        ParameterHelper::configAttenuverter(this, REV_CHANCE_ATTEN_PARAM, "rev sync flip chance cv");
         ParameterHelper::configGain(this, REV_CHANCE_PARAM, "rev sync flip chance", 1.f);
         
         // Inputs
@@ -524,7 +525,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
         ParameterHelper::configCVInput(this, SHAPE1_CV_INPUT, "v shape cv");
         ParameterHelper::configCVInput(this, SHAPE2_CV_INPUT, "z shape cv");
         ParameterHelper::configCVInput(this, XFADE_CV_INPUT, "crossfade cv");
-        ParameterHelper::configCVInput(this, VOICE_DEPTH_CV_INPUT, "voice depth cv");
+        ParameterHelper::configCVInput(this, REV_CHANCE_CV_INPUT, "rev sync flip chance cv");
         
         // Outputs
         ParameterHelper::configAudioOutput(this, LEFT_OUTPUT, "L");
@@ -638,6 +639,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
                 inputs[SHAPE1_CV_INPUT],
                 inputs[SHAPE2_CV_INPUT],
                 inputs[XFADE_CV_INPUT],
+                inputs[REV_CHANCE_CV_INPUT],
             },
             {outputs[LEFT_OUTPUT], outputs[RIGHT_OUTPUT]});
 
@@ -673,7 +675,6 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
         // first few degrees. Applied before the output soft clip.
         const float widthT = 2.f * stereoWidthLocal;
         const float widthSideGain = (widthT <= 1.f) ? widthT * widthT : widthT;
-        const float revChanceLocal = cachedRevChance;
         const bool mutualRevLocal = cachedMutualRev;
         float oversampleRate = args.sampleRate * oversample;
 
@@ -721,7 +722,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
             cachedVoiceRatio = VOICE_RATIOS[clamp((int)std::lround(params[VOICE_RATIO_PARAM].getValue()), 0, 7)];
             cachedVoiceAsym = params[VOICE_ASYM_PARAM].getValue();
             cachedVoiceWidth = params[VOICE_WIDTH_PARAM].getValue();
-            cachedVoiceDepthAtten = params[VOICE_DEPTH_ATTEN_PARAM].getValue() * CV_SHAPE_SCALE;
+            cachedRevChanceAtten = params[REV_CHANCE_ATTEN_PARAM].getValue() * CV_REV_CHANCE_SCALE;
 
             // Cache input connection states
             cachedVoct2Connected = inputs[VOCT2_INPUT].isConnected();
@@ -730,7 +731,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
             cachedShape1CVConnected = inputs[SHAPE1_CV_INPUT].isConnected();
             cachedShape2CVConnected = inputs[SHAPE2_CV_INPUT].isConnected();
             cachedXfadeCVConnected = inputs[XFADE_CV_INPUT].isConnected();
-            cachedVoiceDepthCVConnected = inputs[VOICE_DEPTH_CV_INPUT].isConnected();
+            cachedRevChanceCVConnected = inputs[REV_CHANCE_CV_INPUT].isConnected();
 
             // Crossfade trig for the common (no CV) case
             cachedXfadeClamped = clamp(cachedXfade, 0.f, 1.f);
@@ -829,6 +830,19 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
             float xfade = applyAttenuvertedCv(cachedXfade, cachedXfadeCVConnected, inputs[XFADE_CV_INPUT], ch, cachedXfadeAtten, 0.f, 1.f);
             float xfadeClamped = cachedXfadeCVConnected ? xfade : cachedXfadeClamped;
 
+            // REV. CHANCE CV is additive to the panel knob and uses the
+            // repurposed bipolar attenuverter. At its maximum magnitude,
+            // 0..10 V spans the complete 0..100% chance range; reversing the
+            // attenuverter subtracts that unipolar CV from the panel value.
+            const float revChanceLocal = applyAttenuvertedCv(
+                cachedRevChance,
+                cachedRevChanceCVConnected,
+                inputs[REV_CHANCE_CV_INPUT],
+                ch,
+                cachedRevChanceAtten,
+                0.f,
+                1.f);
+
             // Add organic frequency drift and per-oscillator phase-noise sources.
             updateOrganicVariation(vs, rngState[ch], driftSampleTime, driftAmountLocal, shapedNoise, updateDrift);
 
@@ -876,10 +890,11 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
             const float step2A_base = zOsc.deltaA + vs.z.a.noise * noiseScale;
             const float step2B_base = zOsc.deltaB + vs.z.b.noise * noiseScale;
 
-            // Voice engine per-voice depth (CV-modulatable). The tanh sigmoid
-            // eats small slope swings, so a ^1.5 curve keeps the knob's low
-            // end from feeling dead while mid-knob lands on the sweet zone.
-            float voiceDepthKnob = applyAttenuvertedCv(cachedVoiceDepth, cachedVoiceDepthCVConnected, inputs[VOICE_DEPTH_CV_INPUT], ch, cachedVoiceDepthAtten, 0.f, 1.f);
+            // Voice engine depth is set directly by its panel knob. The tanh
+            // sigmoid eats small slope swings, so a ^1.5 curve keeps the
+            // knob's low end from feeling dead while mid-knob lands on the
+            // sweet zone.
+            const float voiceDepthKnob = clamp(cachedVoiceDepth, 0.f, 1.f);
             const float voiceDepthLocal = voiceDepthKnob * std::sqrt(voiceDepthKnob);
             const bool voiceEngineActive = voiceDepthLocal > 0.001f || baseAsym > 0.001f || stereoWidthLocal > 0.001f;
 
@@ -1271,7 +1286,7 @@ struct ClairaudientWidget : ShapetakerModuleWidget {
         addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("voice_ratio", 35.3f, 98.f), module, ClairaudientModule::VOICE_RATIO_PARAM));
         addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("voice_asym", 88.65f, 98.f), module, ClairaudientModule::VOICE_ASYM_PARAM));
         addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("voice_width", 66.3f, 98.f), module, ClairaudientModule::VOICE_WIDTH_PARAM));
-        addKnobWithShadow(createParamCentered<ShapetakerKnobVintageAttenuverter>(centerPx("voice_depth_atten", 30.6f, 78.862625f), module, ClairaudientModule::VOICE_DEPTH_ATTEN_PARAM));
+        addKnobWithShadow(createParamCentered<ShapetakerKnobVintageAttenuverter>(centerPx("rev_chance_atten", 30.6f, 78.862625f), module, ClairaudientModule::REV_CHANCE_ATTEN_PARAM));
         addKnobWithShadow(createParamCentered<ShapetakerKnobVintageAttenuverter>(centerPx("rev_chance", 71.f, 78.862625f), module, ClairaudientModule::REV_CHANCE_PARAM));
 
         // Vintage oscilloscope display (draw even in module browser previews)
@@ -1296,7 +1311,7 @@ struct ClairaudientWidget : ShapetakerModuleWidget {
         addInput(createInputCentered<ShapetakerBNCPort>(centerPx("v_out_z", 67.857143f, 115.09749f), module, ClairaudientModule::VOCT2_INPUT));
         addInput(createInputCentered<ShapetakerBNCPort>(centerPx("fine_cv_z", 79.228571f, 115.09749f), module, ClairaudientModule::FINE2_CV_INPUT));
         addInput(createInputCentered<ShapetakerBNCPort>(centerPx("shape_cv_z", 90.6f, 115.09749f), module, ClairaudientModule::SHAPE2_CV_INPUT));
-        addInput(createInputCentered<ShapetakerBNCPort>(centerPx("voice_depth_cv", 50.8f, 102.24656f), module, ClairaudientModule::VOICE_DEPTH_CV_INPUT));
+        addInput(createInputCentered<ShapetakerBNCPort>(centerPx("rev_chance_cv", 50.8f, 102.24656f), module, ClairaudientModule::REV_CHANCE_CV_INPUT));
 
         // Stereo outputs — ShapetakerBNCPort (8mm)
         addOutputWithHalo<ShapetakerBNCPort>(this, centerPx("output_l", 45.114286f, 115.09749f), module, ClairaudientModule::LEFT_OUTPUT);
@@ -1343,43 +1358,23 @@ struct ClairaudientWidget : ShapetakerModuleWidget {
                 }));
             }));
 
-        menu->addChild(createSubmenuItem("Oscilloscope Theme", "", [=](Menu* subMenu) {
-            subMenu->addChild(createCheckMenuItem("Follow shared theme", "", [=] {
+        DisplayTheme::addThemeMenu(
+            menu,
+            [=] {
                 return module->useSharedOscilloscopeTheme.load(std::memory_order_relaxed);
-            }, [=] {
-                bool current = module->useSharedOscilloscopeTheme.load(std::memory_order_relaxed);
-                module->useSharedOscilloscopeTheme.store(!current, std::memory_order_relaxed);
+            },
+            [=](bool follow) {
+                module->useSharedOscilloscopeTheme.store(follow, std::memory_order_relaxed);
                 module->sharedOscilloscopeThemeRevisionSeen.store(
                     DisplayTheme::getSharedThemeRevision(),
                     std::memory_order_relaxed);
-            }));
-            subMenu->addChild(new MenuSeparator);
-            subMenu->addChild(createSubmenuItem("Shared", DisplayTheme::getThemeName(DisplayTheme::getSharedTheme()), [=](Menu* themeMenu) {
-                auto addThemeItem = [&](int theme, const char* name) {
-                    themeMenu->addChild(createCheckMenuItem(name, "",
-                        [=] { return DisplayTheme::getSharedThemeIndex() == theme; },
-                        [=] { DisplayTheme::setSharedTheme(theme); }));
-                };
-                for (int theme = 0; theme < DisplayTheme::THEME_COUNT; ++theme)
-                    addThemeItem(theme, DisplayTheme::getThemeName(static_cast<DisplayTheme::Theme>(theme)));
-            }));
-            int localTheme = clamp(module->oscilloscopeTheme.load(std::memory_order_relaxed), 0, DisplayTheme::THEME_COUNT - 1);
-            subMenu->addChild(createSubmenuItem("Local", DisplayTheme::getThemeName(static_cast<DisplayTheme::Theme>(localTheme)), [=](Menu* themeMenu) {
-                auto addThemeItem = [&](int theme, const char* name) {
-                    themeMenu->addChild(createCheckMenuItem(name, "",
-                        [=] { return module->oscilloscopeTheme.load(std::memory_order_relaxed) == theme; },
-                        [=] {
-                            module->oscilloscopeTheme.store(theme, std::memory_order_relaxed);
-                            module->useSharedOscilloscopeTheme.store(false, std::memory_order_relaxed);
-                            module->sharedOscilloscopeThemeRevisionSeen.store(
-                                DisplayTheme::getSharedThemeRevision(),
-                                std::memory_order_relaxed);
-                        }));
-                };
-                for (int theme = 0; theme < DisplayTheme::THEME_COUNT; ++theme)
-                    addThemeItem(theme, DisplayTheme::getThemeName(static_cast<DisplayTheme::Theme>(theme)));
-            }));
-        }));
+            },
+            [=] {
+                return module->oscilloscopeTheme.load(std::memory_order_relaxed);
+            },
+            [=](int theme) {
+                module->oscilloscopeTheme.store(theme, std::memory_order_relaxed);
+            });
 
         menu->addChild(createSubmenuItem("Waveform",
             module->waveformMode.load(std::memory_order_relaxed) == ClairaudientModule::WAVEFORM_PWM ? "PWM" : "Sigmoid Saw",

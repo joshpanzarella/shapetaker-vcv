@@ -35,11 +35,11 @@ Core Z operates in parallel with Core V.
 
 The right-hand column is the heart of the instrument: an internal modulator, running at audio rate and locked to each oscillator's own pitch, that animates the sigmoid curve from within. Because it tracks pitch, the character it imparts stays consistent across an entire melody — play two independent lines into V and Z and each keeps its voice.
 
-- **DEPTH (Knob, CV & Attenuverter):** How far the modulator bends the curve within each waveform cycle. At zero the waveform is frozen and traditional. As depth rises, a formant-like sweep opens up inside every note. The lower quarter of the knob is subtle by nature; the voice truly clears its throat from the midpoint onward. Depth accepts CV per polyphonic voice — an envelope here makes each note "speak."
+- **DEPTH (Knob):** How far the modulator bends the curve within each waveform cycle. At zero the waveform is frozen and traditional. As depth rises, a formant-like sweep opens up inside every note. The lower quarter of the knob is subtle by nature; the voice truly clears its throat from the midpoint onward.
 - **RATIO (Knob):** The modulator's speed as a multiple of the oscillator's pitch, snapped to musical ratios (×0.5 through ×7). Low integers (×2, ×3) give vowel and brass formants; high ones (×5, ×7) turn metallic and bell-like; ×0.5 repeats its pattern every *two* cycles, adding a growling octave-down component.
 - **ASYM (Knob):** Skews the wave's symmetry. A symmetric square-like wave contains only odd harmonics — the hollow, chiptune sound. Asymmetry pours in the missing even harmonics: brassy, reedy, vocal. Its effect is strongest when Shape is high (where the wave is most symmetric) and nearly inaudible when Shape is low (a sawtooth already owns every harmonic). In PWM mode this knob takes on a related duty: see Waveform Selection below.
 - **WIDTH (Knob):** A true mono-to-wide control, displayed 0–200%. At 0% the output collapses to mono — a useful reference point. 100% (center) is natural stereo. Beyond center, the side content is amplified and the Voice Engine's motion in the two channels is driven progressively out of phase, until at 200% the left channel's formant sweeps upward while the right sweeps downward. Extreme settings gain a touch of output saturation by design.
-- **CHANCE (Small Knob):** Governs the Reverse Sync behavior described below.
+- **CHANCE (Small Knob, CV & Attenuverter):** Governs the Reverse Sync behavior described below. The dedicated bipolar attenuverter sets the amount and polarity of REV. CH. CV modulation.
 
 ### Blending and Synchronization
 - **Crossfade:** The proportional mix between Oscillator V and Oscillator Z at the output stage.
@@ -48,7 +48,7 @@ The right-hand column is the heart of the instrument: an internal modulator, run
   - **OFF:** Both cores run free.
   - **ON:** Each time Core V completes a cycle, it forces Core Z to reverse playback direction. The left and right copies of Z flip on *opposite* edges of V's cycle, so the resulting gnarl is spread across the stereo field.
   - **MUTUAL:** Z pushes back — its own cycle completions flip Core V's direction in return. The two oscillators shove each other around chaotically. This is the wildest setting on the module.
-- **CHANCE:** At 100%, every reverse-sync flip happens on schedule (deterministic chaos). Reducing it makes each flip probabilistic — the gnarl loosens, lurches, and staggers. Sweeping CHANCE between roughly 60% and 100% while MUTUAL is engaged is the module's signature live move.
+- **CHANCE:** At 100%, every reverse-sync flip happens on schedule (deterministic chaos). Reducing it makes each flip probabilistic — the gnarl loosens, lurches, and staggers. Sweeping CHANCE between roughly 60% and 100% while MUTUAL is engaged is the module's signature live move; REV. CH. CV can automate that motion per polyphonic voice.
 
 ### Waveform Selection
 
@@ -73,7 +73,7 @@ These interact pleasantly with the WIDTH control, which operates on the final st
 - **V FINE CV / Z FINE CV:** Control voltage inputs for fine-tuning (attenuated for delicate vibrato work).
 - **V SHAPE CV / Z SHAPE CV:** Control voltage inputs for waveform shaping. Audio-rate signals are fair game.
 - **CROSSFADE CV:** Control voltage input for the master mixing stage.
-- **DEPTH CV:** Control voltage input for Voice Engine depth, with attenuverter. Polyphonic.
+- **REV. CH. CV:** 0–10 V control voltage input for reverse-sync flip chance, with bipolar attenuverter. At full positive attenuation, 0–10 V adds 0–100 percentage points to the **REV. CHANCE** knob; reversing the attenuverter subtracts the same amount. The result is clamped to 0–100%. Polyphonic.
 - **L / R OUT:** Master stereophonic audio outputs. For monophonic operation, use the **L** output (or simply set WIDTH to 0%).
 
 ## Calibration and Advanced Settings
@@ -95,10 +95,10 @@ The context menu (right-click) is deliberately brief:
 Leave everything at default. Play a slow melody into V/OCT. The Voice Engine defaults (DEPTH 50%, RATIO ×2, ASYM 35%, WIDTH 100%) produce the module's signature vocal shimmer with no patching at all.
 
 **Brass Séance:**
-Sigmoid Saw mode, Shape at ~85%, DEPTH at 50%. Sweep ASYM slowly from zero: the tone transforms from hollow woodwind to full brass section as the even harmonics arrive. Add an envelope to DEPTH CV so each note swells into speech.
+Sigmoid Saw mode, Shape at ~85%, DEPTH at 50%. Sweep ASYM slowly from zero: the tone transforms from hollow woodwind to full brass section as the even harmonics arrive. Modulate the Shape CV inputs with an envelope so each note swells into speech.
 
 **The Broken Radio:**
-Set REV. SYNC to MUTUAL and CHANCE to 100%. Detune Z a fifth from V. Now ride CHANCE between 60% and 100% — the two cores lurch between locked snarling and staggering collapse. WIDTH at 200% spreads the wreckage across the stereo field.
+Set REV. SYNC to MUTUAL and CHANCE to 100%. Detune Z a fifth from V. Now ride CHANCE between 60% and 100%, or patch an LFO or stepped random source into REV. CH. CV — the two cores lurch between locked snarling and staggering collapse. WIDTH at 200% spreads the wreckage across the stereo field.
 
 **Massive Stereo Ensemble:**
 Crossfade Curve to Stereo Swap, Vintage to ~70%, WIDTH to 150%. Modulate Crossfade CV and Z Fine CV with slow, independent LFOs. The drift, voice tolerances, and opposing formant motion combine into an exceptionally wide, organic ensemble.

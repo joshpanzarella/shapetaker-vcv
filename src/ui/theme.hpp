@@ -311,6 +311,87 @@ public:
         }
 
         /**
+         * Reusable per-module theme state for new themed surfaces. It keeps a
+         * local choice, follows the global palette by default, and rejoins the
+         * global palette whenever that palette is changed elsewhere.
+         */
+        class State {
+        private:
+            std::atomic<int> localTheme;
+            mutable std::atomic<bool> followGlobalTheme;
+            mutable std::atomic<int> globalThemeRevisionSeen;
+
+            void syncGlobalOverride() const {
+                int revision = getSharedThemeRevision();
+                if (globalThemeRevisionSeen.load(std::memory_order_relaxed) != revision) {
+                    followGlobalTheme.store(true, std::memory_order_relaxed);
+                    globalThemeRevisionSeen.store(revision, std::memory_order_relaxed);
+                }
+            }
+
+        public:
+            explicit State(int initialTheme = PHOSPHOR)
+                : localTheme(clamp(initialTheme, 0, THEME_COUNT - 1)),
+                  followGlobalTheme(true),
+                  globalThemeRevisionSeen(getSharedThemeRevision()) {
+            }
+
+            int getEffectiveTheme() const {
+                syncGlobalOverride();
+                return followsGlobalTheme()
+                    ? getSharedThemeIndex()
+                    : getLocalTheme();
+            }
+
+            int getLocalTheme() const {
+                return clamp(localTheme.load(std::memory_order_relaxed), 0, THEME_COUNT - 1);
+            }
+
+            bool followsGlobalTheme() const {
+                return followGlobalTheme.load(std::memory_order_relaxed);
+            }
+
+            void setFollowingGlobalTheme(bool follow) {
+                followGlobalTheme.store(follow, std::memory_order_relaxed);
+                globalThemeRevisionSeen.store(getSharedThemeRevision(), std::memory_order_relaxed);
+            }
+
+            void setLocalTheme(int theme) {
+                localTheme.store(clamp(theme, 0, THEME_COUNT - 1), std::memory_order_relaxed);
+            }
+
+            void dataToJson(json_t* rootJ) const {
+                if (!rootJ)
+                    return;
+                syncGlobalOverride();
+                json_object_set_new(rootJ, "theme", json_integer(getEffectiveTheme()));
+                json_object_set_new(rootJ, "localTheme", json_integer(getLocalTheme()));
+                json_object_set_new(rootJ, "followGlobalTheme", json_boolean(followsGlobalTheme()));
+            }
+
+            void dataFromJson(json_t* rootJ) {
+                if (!rootJ)
+                    return;
+
+                json_t* effectiveJ = json_object_get(rootJ, "theme");
+                if (effectiveJ && json_is_integer(effectiveJ))
+                    setLocalTheme((int)json_integer_value(effectiveJ));
+                if (json_t* localJ = json_object_get(rootJ, "localTheme")) {
+                    if (json_is_integer(localJ))
+                        setLocalTheme((int)json_integer_value(localJ));
+                }
+
+                bool follow = true;
+                if (json_t* followJ = json_object_get(rootJ, "followGlobalTheme"))
+                    follow = json_is_true(followJ);
+                followGlobalTheme.store(follow, std::memory_order_relaxed);
+                if (follow && effectiveJ && json_is_integer(effectiveJ))
+                    restoreSharedTheme((int)json_integer_value(effectiveJ));
+                globalThemeRevisionSeen.store(getSharedThemeRevision(), std::memory_order_relaxed);
+            }
+        };
+
+        /**
          * Theme names for menu display
          */
         static const char* getThemeName(Theme theme) {
@@ -321,6 +402,88 @@ public:
                 "Amber"      // Warm orange
             };
             return names[clamp((int)theme, 0, THEME_COUNT - 1)];
+        }
+
+        /**
+         * Add the standard Shapetaker theme picker to a module context menu.
+         *
+         * Modules keep their existing state and serialization, while this
+         * helper gives every themed display/light the same generic UI:
+         * Theme -> Follow global theme / Global / Local.
+         */
+        template <typename GetFollowing, typename SetFollowing,
+                  typename GetLocalTheme, typename SetLocalTheme,
+                  typename GetLocalThemeName>
+        static void addThemeMenu(Menu* menu,
+                                 GetFollowing getFollowing,
+                                 SetFollowing setFollowing,
+                                 GetLocalTheme getLocalTheme,
+                                 SetLocalTheme setLocalTheme,
+                                 int localThemeCount,
+                                 GetLocalThemeName getLocalThemeName) {
+            if (!menu || localThemeCount <= 0)
+                return;
+
+            int localTheme = clamp(getLocalTheme(), 0, localThemeCount - 1);
+            const char* effectiveName = getFollowing()
+                ? getThemeName(getSharedTheme())
+                : getLocalThemeName(localTheme);
+
+            menu->addChild(createSubmenuItem("Theme", effectiveName,
+                [=](Menu* themeMenu) {
+                    themeMenu->addChild(createCheckMenuItem(
+                        "Follow global theme", "",
+                        [=] { return getFollowing(); },
+                        [=] { setFollowing(!getFollowing()); }));
+
+                    themeMenu->addChild(createSubmenuItem(
+                        "Global",
+                        getThemeName(getSharedTheme()),
+                        [=](Menu* globalMenu) {
+                            for (int i = 0; i < THEME_COUNT; ++i) {
+                                Theme theme = static_cast<Theme>(i);
+                                globalMenu->addChild(createCheckMenuItem(
+                                    getThemeName(theme), "",
+                                    [=] { return getSharedThemeIndex() == i; },
+                                    [=] { setSharedTheme(i); }));
+                            }
+                        }));
+
+                    int currentLocalTheme = clamp(getLocalTheme(), 0, localThemeCount - 1);
+                    themeMenu->addChild(createSubmenuItem(
+                        "Local",
+                        getLocalThemeName(currentLocalTheme),
+                        [=](Menu* localMenu) {
+                            for (int i = 0; i < localThemeCount; ++i) {
+                                localMenu->addChild(createCheckMenuItem(
+                                    getLocalThemeName(i), "",
+                                    [=] { return getLocalTheme() == i; },
+                                    [=] {
+                                        setLocalTheme(i);
+                                        setFollowing(false);
+                                    }));
+                            }
+                        }));
+                }));
+        }
+
+        template <typename GetFollowing, typename SetFollowing,
+                  typename GetLocalTheme, typename SetLocalTheme>
+        static void addThemeMenu(Menu* menu,
+                                 GetFollowing getFollowing,
+                                 SetFollowing setFollowing,
+                                 GetLocalTheme getLocalTheme,
+                                 SetLocalTheme setLocalTheme) {
+            addThemeMenu(
+                menu,
+                getFollowing,
+                setFollowing,
+                getLocalTheme,
+                setLocalTheme,
+                THEME_COUNT,
+                [](int theme) {
+                    return getThemeName(static_cast<Theme>(theme));
+                });
         }
 
         /**
