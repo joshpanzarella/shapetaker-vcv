@@ -7,6 +7,7 @@
   "author": "Josh Panzarella",
   "authorEmail": "joshpanzarella@gmail.com",
   "sourceUrl": "https://github.com/joshpanzarella/shapetaker-vcv",
+  "pluginUrl": "https://shapetaker.com",
   "modules": [
     {
       "slug": "Clairaudient",

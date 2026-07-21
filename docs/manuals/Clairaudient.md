@@ -4,7 +4,7 @@
 
 ## Description
 
-The Clairaudient module is a precision polyphonic dual-oscillator system (supporting up to 6 simultaneous voices) engineered for rich timbral movement and expansive stereophonic imaging. The instrument is centered around two distinct oscillator cores, designated **V** and **Z**, which may be seamlessly blended, shaped, and set against one another.
+The Clairaudient module is a precision polyphonic dual-oscillator system (supporting up to 16 simultaneous voices) engineered for rich timbral movement and expansive stereophonic imaging. The instrument is centered around two distinct oscillator cores, designated **V** and **Z**, which may be seamlessly blended, shaped, and set against one another.
 
 Departing from traditional analog wave generation, Clairaudient builds its waveform around a mathematical sigmoid curve: a sawtooth whose central edge can be reshaped from a gentle ramp to a razor-sharp transition. What distinguishes the instrument is that this edge does not have to sit still. The onboard **Formant section** modulates the curve's slope and symmetry at audio rate, locked to the pitch of each oscillator, so the harmonics inside every note shift and swirl on their own — no external modulation required. The effect is reminiscent of vowels, brass, and voices emerging from within the tone; hence the name.
 
@@ -36,7 +36,7 @@ Core Z operates in parallel with Core V.
 The right-hand column is the heart of the instrument: an internal modulator, running at audio rate and locked to each oscillator's own pitch, that animates the sigmoid curve from within. Because it tracks pitch, the character it imparts stays consistent across an entire melody — play two independent lines into V and Z and each keeps its voice.
 
 - **DEPTH (Knob):** How far the modulator bends the curve within each waveform cycle. At zero the waveform is frozen and traditional. As depth rises, a formant-like sweep opens up inside every note. The lower quarter of the knob is subtle by nature; the voice truly clears its throat from the midpoint onward.
-- **RATIO (Knob):** The modulator's speed as a multiple of the oscillator's pitch, snapped to musical ratios (×0.5 through ×7). Low integers (×2, ×3) give vowel and brass formants; high ones (×5, ×7) turn metallic and bell-like; ×0.5 repeats its pattern every *two* cycles, adding a growling octave-down component.
+- **RATIO (Knob):** The modulator's speed as a multiple of the oscillator's pitch, snapped to eight musical ratios (×0.5, ×1, ×1.5, ×2, ×3, ×4, ×5, ×7). Low integers (×2, ×3) give vowel and brass formants; high ones (×5, ×7) turn metallic and bell-like; ×0.5 repeats its pattern every *two* cycles, adding a growling octave-down component.
 - **ASYM (Knob):** Skews the wave's symmetry. A symmetric square-like wave contains only odd harmonics — the hollow, chiptune sound. Asymmetry pours in the missing even harmonics: brassy, reedy, vocal. Its effect is strongest when Shape is high (where the wave is most symmetric) and nearly inaudible when Shape is low (a sawtooth already owns every harmonic). In PWM mode this knob takes on a related duty: see Waveform Selection below.
 - **WIDTH (Knob):** A true mono-to-wide control, displayed 0–200%. At 0% the output collapses to mono — a useful reference point. 100% (center) is natural stereo. Beyond center, the side content is amplified and the Formant section’s motion in the two channels is driven progressively out of phase, until at 200% the left channel's formant sweeps upward while the right sweeps downward. Extreme settings gain a touch of output saturation by design.
 - **CHANCE (Small Knob, CV & Attenuverter):** Governs the Reverse Sync behavior described below. The dedicated bipolar attenuverter sets the amount and polarity of REV. CH. CV modulation.
@@ -81,10 +81,10 @@ These interact pleasantly with the WIDTH control, which operates on the final st
 The context menu (right-click) is deliberately brief:
 
 - **Settings:**
-  - **Quantize:** Defeats the stepped behavior of the V (octaves) and Z (semitones) pitch controls for continuous sweeps.
-  - **Oscilloscope Display:** Chooses what the central screen draws. **Waveform** (default) is a triggered trace of the left output with the right output ghosted behind it — stable, and ideal for watching the Formant section bend the sigmoid in real time. **Lissajous (X-Y)** plots left against right; a diagonal line means mono, an open ellipse means stereo, and a woolly cloud means the WIDTH and sync controls are doing their job.
+  - **Quantize:** Two independent checkmarks — *V Oscillator (octaves)* and *Z Oscillator (semitones)* — defeat the stepped behavior of each pitch control for continuous sweeps. Free one core and keep the other stepped, or unquantize both.
+  - **Oscilloscope Display:** Chooses what the central screen draws. **Lissajous (X-Y)** (default) plots left against right; a diagonal line means mono, an open ellipse means stereo, and a woolly cloud means the WIDTH and sync controls are doing their job. **Waveform** is a triggered trace of the left output with the right output ghosted behind it — stable, and ideal for watching the Formant section bend the sigmoid in real time.
   - **Oscilloscope Theme:** Visual styling of the central display, shared or per-module.
-  - **Waveform / Crossfade Curve / Oversampling:** As described above. 4× oversampling is recommended for general operation.
+  - **Waveform / Crossfade Curve / Oversampling:** Waveform and Crossfade Curve as described above. Oversampling offers 1× (off), 2×, 4×, and 8×; 4× is the default and recommended for general operation, with 8× worth its CPU cost under MUTUAL reverse sync or audio-rate shape modulation at high pitches.
 - **Character:**
   - **Vintage:** A single macro governing the module's analog-modeled imperfections — slow thermal pitch drift, per-voice component tolerances (pitch, level, and pan offsets across polyphonic voices), stereo crosstalk, and bus saturation. **50% is the calibrated factory intent** — the amount a well-maintained vintage instrument would exhibit. Below that it cleans up toward digital precision; above it, the module ages considerably, ending at roughly four times the calibrated instability. Fully clockwise resembles a beloved instrument with a failing power supply.
   - **Oscillator Noise:** A hardware-like noise floor plus microscopic phase jitter that softens the waveform edges, replicating the lively instability of a vintage VCO.
@@ -108,7 +108,7 @@ Waveform Mode to PWM, Shape at ~40%, DEPTH at 60%, RATIO ×1. Sweep ASYM upward 
 
 ## Polyphony and Chords
 
-Clairaudient supports up to 6 voices. The voice count follows the widest polyphonic cable patched into any input, and both outputs carry that same channel count.
+Clairaudient supports up to 16 voices. The voice count follows the widest polyphonic cable patched into any input, and both outputs carry that same channel count.
 
 Polyphonic channels behave as **lanes**: voice *n* builds its V oscillator from channel *n* of the V/Oct V cable and its Z oscillator from channel *n* of the V/Oct Z cable, then crossfades, syncs, and voices that pair in isolation. With two chords patched in (for example, both sequences of a Transmutation), notes are therefore paired by channel position — the pairings evolve with each sequencer's voice-leading, and the sync behaviors react within each pair.
 
