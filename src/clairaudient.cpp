@@ -20,7 +20,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
     static constexpr float OUTPUT_GAIN            = 5.f;
     static constexpr float NOISE_V_PEAK           = 0.45f;
     static constexpr float UINT32_NORM            = 1.f / 4294967296.f; // 1 / 2^32
-    static constexpr float VOICE_RATIOS[8]        = {0.5f, 1.f, 1.5f, 2.f, 3.f, 4.f, 5.f, 7.f};
+    static constexpr float FORMANT_RATIOS[8]        = {0.5f, 1.f, 1.5f, 2.f, 3.f, 4.f, 5.f, 7.f};
     // Frequency parameter ranges
     static constexpr float FREQ1_OCT_MIN          = -2.f;
     static constexpr float FREQ1_OCT_MAX          =  2.f;
@@ -65,10 +65,10 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
         XFADE_ATTEN_PARAM,
         SYNC1_PARAM,
         SYNC2_PARAM,
-        VOICE_DEPTH_PARAM,
-        VOICE_RATIO_PARAM,
-        VOICE_ASYM_PARAM,
-        VOICE_WIDTH_PARAM,
+        FORMANT_DEPTH_PARAM,
+        FORMANT_RATIO_PARAM,
+        FORMANT_ASYM_PARAM,
+        FORMANT_WIDTH_PARAM,
         REV_CHANCE_ATTEN_PARAM,
         REV_CHANCE_PARAM,
         PARAMS_LEN
@@ -218,10 +218,10 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
     float cachedXfadeCos = 0.70710678f;
     float cachedXfadeSin = 0.70710678f;
     float cachedWidthBlend = 1.f;
-    float cachedVoiceDepth = 0.5f;
-    float cachedVoiceRatio = 2.f;
-    float cachedVoiceAsym = 0.35f;
-    float cachedVoiceWidth = 0.5f;
+    float cachedFormantDepth = 0.5f;
+    float cachedFormantRatio = 2.f;
+    float cachedFormantAsym = 0.35f;
+    float cachedFormantWidth = 0.5f;
     float cachedRevChanceAtten = 0.f;
     bool cachedRevChanceCVConnected = false;
     bool cachedSync1 = false;
@@ -307,7 +307,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
         float deltaB = 0.f;
         float shape = 0.5f;
         float blend = 0.f;      // saw -> sigmoid crossfade (full sigmoid by ~55% of knob travel)
-        float rangeBase = 2.2f; // sigmoid slope before voice-engine modulation
+        float rangeBase = 2.2f; // sigmoid slope before formant modulation
         float season = 0.f;     // scales the subtle organic harmonic garnish
         float lowShape = 0.f;
         float pwmShape = 0.5f;
@@ -320,7 +320,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
     // wob: in-phase modulator sample (overall slope wobble -> formant sweep).
     // asymWob: quadrature modulator sample (duty-cycle skew -> even harmonics).
     // stereoScale: static slope offset separating the L/R copies.
-    static inline void voiceMod(float rangeBase, float wob, float asymWob, float baseAsym,
+    static inline void formantMod(float rangeBase, float wob, float asymWob, float baseAsym,
                                 float depth, float stereoScale, float& range, float& center) {
         float scale = 1.f + 3.f * depth * wob;
         scale = std::max(scale, 0.12f) * stereoScale;
@@ -507,13 +507,13 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
         configSwitch(SYNC1_PARAM, 0.f, 1.f, 0.f, "cross sync", {"off", "on"});
         configSwitch(SYNC2_PARAM, 0.f, 2.f, 0.f, "reverse sync", {"off", "on", "mutual"});
 
-        // Voice engine: internal audio-rate sigmoid slope/skew modulation,
+        // Formant section: internal audio-rate sigmoid slope/skew modulation,
         // ratio-locked to each oscillator's own pitch.
-        ParameterHelper::configGain(this, VOICE_DEPTH_PARAM, "voice depth", 0.5f);
-        configSwitch(VOICE_RATIO_PARAM, 0.f, 7.f, 3.f, "voice ratio",
+        ParameterHelper::configGain(this, FORMANT_DEPTH_PARAM, "formant depth", 0.5f);
+        configSwitch(FORMANT_RATIO_PARAM, 0.f, 7.f, 3.f, "formant ratio",
                      {"\u00d70.5", "\u00d71", "\u00d71.5", "\u00d72", "\u00d73", "\u00d74", "\u00d75", "\u00d77"});
-        ParameterHelper::configGain(this, VOICE_ASYM_PARAM, "slope asymmetry", 0.35f);
-        configParam(VOICE_WIDTH_PARAM, 0.f, 1.f, 0.5f, "stereo width", "%", 0.f, 200.f);
+        ParameterHelper::configGain(this, FORMANT_ASYM_PARAM, "slope asymmetry", 0.35f);
+        configParam(FORMANT_WIDTH_PARAM, 0.f, 1.f, 0.5f, "stereo width", "%", 0.f, 200.f);
         ParameterHelper::configAttenuverter(this, REV_CHANCE_ATTEN_PARAM, "rev sync flip chance cv");
         ParameterHelper::configGain(this, REV_CHANCE_PARAM, "rev sync flip chance", 1.f);
         
@@ -657,11 +657,11 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
         const float driftCohesionLocal = 0.4f; // mostly independent wander, a little shared breathing
         const float voiceCharacterLocal = vintageEff;
         const float outputColorLocal = vintageEff;
-        const float voiceRatioLocal = cachedVoiceRatio;
+        const float formantRatioLocal = cachedFormantRatio;
         // sqrt curve: even-harmonic gain is compressed at the top, so give the
         // low end of the knob more authority
-        const float baseAsym = 0.9f * std::sqrt(clamp(cachedVoiceAsym, 0.f, 1.f));
-        const float stereoWidthLocal = clamp(cachedVoiceWidth, 0.f, 1.f);
+        const float baseAsym = 0.9f * std::sqrt(clamp(cachedFormantAsym, 0.f, 1.f));
+        const float stereoWidthLocal = clamp(cachedFormantWidth, 0.f, 1.f);
         // Width morphs the right copy's modulator phase from 0 (mono-coherent)
         // through quadrature to anti-phase (180 degrees at full) so the L/R
         // formant motion visibly opposes, plus a static slope offset.
@@ -718,10 +718,10 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
             cachedSync2 = sync2Value >= 0.5f;
             cachedMutualRev = sync2Value >= 1.5f;
             cachedRevChance = params[REV_CHANCE_PARAM].getValue();
-            cachedVoiceDepth = params[VOICE_DEPTH_PARAM].getValue();
-            cachedVoiceRatio = VOICE_RATIOS[clamp((int)std::lround(params[VOICE_RATIO_PARAM].getValue()), 0, 7)];
-            cachedVoiceAsym = params[VOICE_ASYM_PARAM].getValue();
-            cachedVoiceWidth = params[VOICE_WIDTH_PARAM].getValue();
+            cachedFormantDepth = params[FORMANT_DEPTH_PARAM].getValue();
+            cachedFormantRatio = FORMANT_RATIOS[clamp((int)std::lround(params[FORMANT_RATIO_PARAM].getValue()), 0, 7)];
+            cachedFormantAsym = params[FORMANT_ASYM_PARAM].getValue();
+            cachedFormantWidth = params[FORMANT_WIDTH_PARAM].getValue();
             cachedRevChanceAtten = params[REV_CHANCE_ATTEN_PARAM].getValue() * CV_REV_CHANCE_SCALE;
 
             // Cache input connection states
@@ -890,13 +890,13 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
             const float step2A_base = zOsc.deltaA + vs.z.a.noise * noiseScale;
             const float step2B_base = zOsc.deltaB + vs.z.b.noise * noiseScale;
 
-            // Voice engine depth is set directly by its panel knob. The tanh
+            // Formant section depth is set directly by its panel knob. The tanh
             // sigmoid eats small slope swings, so a ^1.5 curve keeps the
             // knob's low end from feeling dead while mid-knob lands on the
             // sweet zone.
-            const float voiceDepthKnob = clamp(cachedVoiceDepth, 0.f, 1.f);
-            const float voiceDepthLocal = voiceDepthKnob * std::sqrt(voiceDepthKnob);
-            const bool voiceEngineActive = voiceDepthLocal > 0.001f || baseAsym > 0.001f || stereoWidthLocal > 0.001f;
+            const float formantDepthKnob = clamp(cachedFormantDepth, 0.f, 1.f);
+            const float formantDepthLocal = formantDepthKnob * std::sqrt(formantDepthKnob);
+            const bool formantActive = formantDepthLocal > 0.001f || baseAsym > 0.001f || stereoWidthLocal > 0.001f;
 
             for (int os = 0; os < oversample; os++) {
 
@@ -967,24 +967,24 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
                 if (isPwm) {
                     float pw1A = vOsc.pwmShape, pw1B = vOsc.pwmShape;
                     float pw2A = zOsc.pwmShape, pw2B = zOsc.pwmShape;
-                    if (voiceDepthLocal > 0.001f) {
+                    if (formantDepthLocal > 0.001f) {
                         // Ratio-locked audio-rate PW modulation; width morphs
                         // the right copy's modulator phase toward anti-phase.
                         // ASYM skews the modulation trajectory (SHAPE already
                         // owns the static duty cycle in this mode).
-                        float pwDepth = 0.45f * voiceDepthLocal;
+                        float pwDepth = 0.45f * formantDepthLocal;
                         float pwSkewK = 0.5f + 0.44f * baseAsym;
-                        pw1A = clamp(vOsc.pwmShape + pwDepth * skewedSin2Pi(vs.v.a.phase * voiceRatioLocal, pwSkewK), 0.05f, 0.95f);
-                        pw1B = clamp(vOsc.pwmShape + pwDepth * skewedSin2Pi(vs.v.a.phase * voiceRatioLocal + widthPhase, pwSkewK), 0.05f, 0.95f);
-                        pw2A = clamp(zOsc.pwmShape + pwDepth * skewedSin2Pi(vs.z.a.phase * voiceRatioLocal, pwSkewK), 0.05f, 0.95f);
-                        pw2B = clamp(zOsc.pwmShape + pwDepth * skewedSin2Pi(vs.z.a.phase * voiceRatioLocal + widthPhase, pwSkewK), 0.05f, 0.95f);
+                        pw1A = clamp(vOsc.pwmShape + pwDepth * skewedSin2Pi(vs.v.a.phase * formantRatioLocal, pwSkewK), 0.05f, 0.95f);
+                        pw1B = clamp(vOsc.pwmShape + pwDepth * skewedSin2Pi(vs.v.a.phase * formantRatioLocal + widthPhase, pwSkewK), 0.05f, 0.95f);
+                        pw2A = clamp(zOsc.pwmShape + pwDepth * skewedSin2Pi(vs.z.a.phase * formantRatioLocal, pwSkewK), 0.05f, 0.95f);
+                        pw2B = clamp(zOsc.pwmShape + pwDepth * skewedSin2Pi(vs.z.a.phase * formantRatioLocal + widthPhase, pwSkewK), 0.05f, 0.95f);
                     }
                     osc1A = OscillatorHelper::pwmWithPolyBLEP(vs.v.a.phase, pw1A, vOsc.deltaA);
                     osc1B = OscillatorHelper::pwmWithPolyBLEP(vs.v.b.phase, pw1B, vOsc.deltaB);
                     osc2A = OscillatorHelper::pwmWithPolyBLEP(vs.z.a.phase, pw2A, zOsc.deltaA);
                     osc2B = OscillatorHelper::pwmWithPolyBLEP(vs.z.b.phase, pw2B, zOsc.deltaB);
                 } else {
-                    // Voice engine: sigmoid slope and transition center
+                    // Formant section: sigmoid slope and transition center
                     // modulated at audio rate, ratio-locked to each
                     // oscillator's own phase. The in-phase component wobbles
                     // slope (formant sweep), the quadrature component skews
@@ -992,9 +992,9 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
                     // swap roles so the movement swirls between the left and
                     // right outputs.
                     float r1A, c1A, r1B, c1B, r2A, c2A, r2B, c2B;
-                    if (voiceEngineActive) {
-                        float base1 = vs.v.a.phase * voiceRatioLocal;
-                        float base2 = vs.z.a.phase * voiceRatioLocal;
+                    if (formantActive) {
+                        float base1 = vs.v.a.phase * formantRatioLocal;
+                        float base2 = vs.z.a.phase * formantRatioLocal;
                         float mv = OscillatorHelper::fastSin2Pi(base1);
                         float qv = OscillatorHelper::fastSin2Pi(base1 + 0.25f);
                         float mvB = OscillatorHelper::fastSin2Pi(base1 + widthPhase);
@@ -1003,10 +1003,10 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
                         float qz = OscillatorHelper::fastSin2Pi(base2 + 0.25f);
                         float mzB = OscillatorHelper::fastSin2Pi(base2 + widthPhase);
                         float qzB = OscillatorHelper::fastSin2Pi(base2 + 0.25f + widthPhase);
-                        voiceMod(vOsc.rangeBase, mv, qv, baseAsym, voiceDepthLocal, stereoScaleA, r1A, c1A);
-                        voiceMod(vOsc.rangeBase, mvB, qvB, baseAsym, voiceDepthLocal, stereoScaleB, r1B, c1B);
-                        voiceMod(zOsc.rangeBase, mz, qz, baseAsym, voiceDepthLocal, stereoScaleA, r2A, c2A);
-                        voiceMod(zOsc.rangeBase, mzB, qzB, baseAsym, voiceDepthLocal, stereoScaleB, r2B, c2B);
+                        formantMod(vOsc.rangeBase, mv, qv, baseAsym, formantDepthLocal, stereoScaleA, r1A, c1A);
+                        formantMod(vOsc.rangeBase, mvB, qvB, baseAsym, formantDepthLocal, stereoScaleB, r1B, c1B);
+                        formantMod(zOsc.rangeBase, mz, qz, baseAsym, formantDepthLocal, stereoScaleA, r2A, c2A);
+                        formantMod(zOsc.rangeBase, mzB, qzB, baseAsym, formantDepthLocal, stereoScaleB, r2B, c2B);
                     } else {
                         r1A = r1B = vOsc.rangeBase;
                         r2A = r2B = zOsc.rangeBase;
@@ -1281,11 +1281,11 @@ struct ClairaudientWidget : ShapetakerModuleWidget {
         addKnobWithShadow(createParamCentered<ShapetakerAttenuverterOscilloscope>(centerPx("sh_cv_v", 11.5f, 79.612099f), module, ClairaudientModule::SHAPE1_ATTEN_PARAM));
         addKnobWithShadow(createParamCentered<ShapetakerAttenuverterOscilloscope>(centerPx("sh_cv_z", 90.1f, 79.612099f), module, ClairaudientModule::SHAPE2_ATTEN_PARAM));
 
-        // Voice engine rows
-        addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("voice_depth", 12.95f, 98.f), module, ClairaudientModule::VOICE_DEPTH_PARAM));
-        addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("voice_ratio", 35.3f, 98.f), module, ClairaudientModule::VOICE_RATIO_PARAM));
-        addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("voice_asym", 88.65f, 98.f), module, ClairaudientModule::VOICE_ASYM_PARAM));
-        addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("voice_width", 66.3f, 98.f), module, ClairaudientModule::VOICE_WIDTH_PARAM));
+        // Formant section rows
+        addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("formant_depth", 12.95f, 98.f), module, ClairaudientModule::FORMANT_DEPTH_PARAM));
+        addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("formant_ratio", 35.3f, 98.f), module, ClairaudientModule::FORMANT_RATIO_PARAM));
+        addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("formant_asym", 88.65f, 98.f), module, ClairaudientModule::FORMANT_ASYM_PARAM));
+        addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("formant_width", 66.3f, 98.f), module, ClairaudientModule::FORMANT_WIDTH_PARAM));
         addKnobWithShadow(createParamCentered<ShapetakerKnobVintageAttenuverter>(centerPx("rev_chance_atten", 30.6f, 78.862625f), module, ClairaudientModule::REV_CHANCE_ATTEN_PARAM));
         addKnobWithShadow(createParamCentered<ShapetakerKnobVintageAttenuverter>(centerPx("rev_chance", 71.f, 78.862625f), module, ClairaudientModule::REV_CHANCE_PARAM));
 
@@ -1440,6 +1440,6 @@ struct ClairaudientWidget : ShapetakerModuleWidget {
     }
 };
 
-constexpr float ClairaudientModule::VOICE_RATIOS[];
+constexpr float ClairaudientModule::FORMANT_RATIOS[];
 
 Model* modelClairaudient = createModel<ClairaudientModule, ClairaudientWidget>("Clairaudient");
