@@ -45,14 +45,29 @@ public:
         return shape;
     }
 
+    // The bail-out sits at |x| > 5, not |x| > 3. The rational is still accurate
+    // there (tanh(5) = 0.9999092), so returning a flat +/-1.0 at |x| = 3 used to
+    // put a 0.00494 step — half a percent of full scale — into the middle of the
+    // transfer curve. Any signal crossing it picked the step up as high-order
+    // harmonic splatter: measured -57 dB relative to the saturated output at
+    // drive 4.0, against -103 dB with the knee where it is now. Worst-case error
+    // against true tanh falls from 0.004943 to 0.000096.
+    //
+    // For |x| <= 3 this is bit-identical to the previous version, so anything
+    // that never reaches the old knee (Clairaudient's bus colour, for one) is
+    // completely unaffected.
+    //
+    // The rational overshoots 1.0 very slightly just before the bail-out
+    // (1.0000098 at x = 5), so the result is clamped rather than trusted.
     static inline float fastTanh(float x) {
         float x2 = x * x;
-        if (x2 > 9.0f) {
+        if (x2 > 25.0f) {
             return x > 0.0f ? 1.0f : -1.0f;
         }
         float a = x * (135135.0f + x2 * (17325.0f + x2 * (378.0f + x2)));
         float b = 135135.0f + x2 * (62370.0f + x2 * (3150.0f + x2 * 28.0f));
-        return a / b;
+        float y = a / b;
+        return y < -1.0f ? -1.0f : (y > 1.0f ? 1.0f : y);
     }
 
     static inline float fastSin2Pi(float phase) {
@@ -69,6 +84,43 @@ public:
         
         // smooth
         return y * (0.225f * (absY - 1.f) + 1.f);
+    }
+
+    // Accurate drop-in for fastSin2Pi: same phase convention, SAME SIGN, ~59 dB
+    // more accurate, roughly 1.8x the cost.
+    //
+    //   fastSin2Pi:      peak error 1.1e-3  (-59 dB),  THD  -62 dBc
+    //   accurateSin2Pi:  peak error 3.6e-6 (-109 dB),  THD -121 dBc
+    //
+    // SIGN: fastSin2Pi above returns -sin(2*pi*phase), not +sin — the parabola
+    // approximates sin(pi*(2*phase-1)) and this copy never negates it. (The
+    // near-identical fastSin2Pi in DistortionEngine, src/dsp/effects.hpp, DOES
+    // negate, so the two are off by half a cycle.) This function reproduces the
+    // OscillatorHelper sign so it can be swapped in without inverting anything.
+    //
+    // Use it where the sine is an *oscillator core* rather than a modulation
+    // shape. It matters most in FM: a modulator's own distortion is multiplied
+    // into every sideband family it generates, so fastSin2Pi's -62 dBc puts a
+    // floor under the whole voice that no amount of oversampling can lift. For
+    // LFOs, ring mod, chorus and wavefolding, fastSin2Pi remains the right call.
+    //
+    // Quarter-wave fold into [-pi/2, pi/2], then the 9th-order odd Taylor series
+    // (error ~ z^11/11! = 3.7e-6 at the fold edge).
+    static inline float accurateSin2Pi(float phase) {
+        int32_t phaseInt = static_cast<int32_t>(phase);
+        float frac = phase - static_cast<float>(phaseInt);
+        if (frac < 0.f) frac += 1.f;
+
+        float x = 4.f * frac;                   // [0, 4) in quarter-cycles
+        if (x > 3.f)      x -= 4.f;             // [-1, 0)
+        else if (x > 1.f) x = 2.f - x;          // [-1, 1]
+        float z = x * 1.57079632679f;           // [-pi/2, pi/2]
+        float z2 = z * z;
+        float s = z * (1.f + z2 * (-1.66666667e-1f
+                     + z2 * ( 8.33333333e-3f
+                     + z2 * (-1.98412698e-4f
+                     + z2 *   2.75573192e-6f))));
+        return -s;                              // match fastSin2Pi's sign
     }
 
     // Sigmoid-morphed saw with a movable transition center. Shifting the

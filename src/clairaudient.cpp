@@ -13,8 +13,8 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
 
     // DSP Constants
     static constexpr float MIDDLE_C_HZ           = 261.626f;
-    static constexpr float CV_FINE_SCALE          = 1.f / 50.f;
     static constexpr float CV_SHAPE_SCALE         = 1.f / 5.f;
+    static constexpr float CV_FORMANT_SCALE       = 1.f / 10.f;
     static constexpr float CV_XFADE_SCALE         = 1.f / 10.f;
     static constexpr float CV_REV_CHANCE_SCALE    = 1.f / 10.f;
     static constexpr float OUTPUT_GAIN            = 5.f;
@@ -55,8 +55,11 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
         FREQ2_PARAM,
         FINE1_PARAM,
         FINE2_PARAM,
-        FINE1_ATTEN_PARAM,
-        FINE2_ATTEN_PARAM,
+        // Formant attenuverters live at these indices because they inherited
+        // the panel positions (and the saved param slots) of the retired fine
+        // tune attenuverters.
+        FORMANT_DEPTH_ATTEN_PARAM,
+        FORMANT_WIDTH_ATTEN_PARAM,
         SHAPE1_PARAM,
         SHAPE2_PARAM,
         SHAPE1_ATTEN_PARAM,
@@ -76,8 +79,8 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
     enum InputId {
         VOCT1_INPUT,
         VOCT2_INPUT,
-        FINE1_CV_INPUT,
-        FINE2_CV_INPUT,
+        FORMANT_DEPTH_CV_INPUT,
+        FORMANT_WIDTH_CV_INPUT,
         SHAPE1_CV_INPUT,
         SHAPE2_CV_INPUT,
         XFADE_CV_INPUT,
@@ -199,16 +202,46 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
     static constexpr int kDriftDecimation = 64;  // Drift is extremely slow; update less often
     int driftDecimationCounter = 0;
 
+    // Everything the WIDTH control drives, resolved together so the per-voice
+    // CV path and the cached unpatched path cannot drift apart.
+    struct WidthCoeffs {
+        float width = 0.5f;
+        float phase = 0.25f;    // right copy's modulator phase offset
+        float scaleA = 1.14f;   // static slope offset, left copy
+        float scaleB = 0.86f;   // static slope offset, right copy
+        float sideGain = 1.f;   // mid/side side-channel gain
+    };
+
+    static inline WidthCoeffs makeWidthCoeffs(float widthParam) {
+        WidthCoeffs w;
+        w.width = clamp(widthParam, 0.f, 1.f);
+        // Width morphs the right copy's modulator phase from 0 (mono-coherent)
+        // through quadrature to anti-phase (180 degrees at full) so the L/R
+        // formant motion visibly opposes, plus a static slope offset.
+        w.phase = 0.5f * w.width;
+        w.scaleA = 1.f + 0.28f * w.width;
+        w.scaleB = 1.f - 0.28f * w.width;
+        // Mid/side stage: knob 0 collapses to mono, center = natural stereo,
+        // full doubles the side content. The detuned copies carry a lot of
+        // natural side energy, so the lower half is squared to spread the
+        // mono->natural transition across the whole half instead of the
+        // first few degrees. Applied before the output soft clip.
+        float t = 2.f * w.width;
+        w.sideGain = (t <= 1.f) ? t * t : t;
+        return w;
+    }
+
     // Cached parameter values (updated every kParamDecimation samples)
     float cachedBasePitch1 = 0.f;
     float cachedBaseSemitoneZ = 0.f;
-    float cachedFineTune1 = 0.f;
-    float cachedFineTune2 = 0.f;
+    // Fine tune is knob-only, so it is cached already converted to octaves.
+    float cachedFineTune1Oct = 0.f;
+    float cachedFineTune2Oct = 0.f;
     float cachedShape1 = 0.5f;
     float cachedShape2 = 0.5f;
     float cachedXfade = 0.5f;
-    float cachedFine1Atten = 0.f;
-    float cachedFine2Atten = 0.f;
+    float cachedFormantDepthAtten = 0.f;
+    float cachedFormantWidthAtten = 0.f;
     float cachedShape1Atten = 0.f;
     float cachedShape2Atten = 0.f;
     float cachedXfadeAtten = 0.f;
@@ -222,6 +255,11 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
     float cachedFormantRatio = 2.f;
     float cachedFormantAsym = 0.35f;
     float cachedFormantWidth = 0.5f;
+    // Curved depth/asym for the common (no CV) case; the per-voice CV paths
+    // recompute these locally.
+    float cachedFormantDepthCurved = 0.5f * 0.70710678f;
+    float cachedBaseAsym = 0.9f * 0.59160798f;
+    WidthCoeffs cachedWidthCoeffs;
     float cachedRevChanceAtten = 0.f;
     bool cachedRevChanceCVConnected = false;
     bool cachedSync1 = false;
@@ -231,8 +269,8 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
 
     // Cached input connection states (updated every kParamDecimation samples)
     bool cachedVoct2Connected = false;
-    bool cachedFine1CVConnected = false;
-    bool cachedFine2CVConnected = false;
+    bool cachedFormantDepthCVConnected = false;
+    bool cachedFormantWidthCVConnected = false;
     bool cachedShape1CVConnected = false;
     bool cachedShape2CVConnected = false;
     bool cachedXfadeCVConnected = false;
@@ -298,6 +336,19 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
             base += input.getPolyVoltage(channel) * precalcScale;
         }
         return clamp(base, minValue, maxValue);
+    }
+
+    // The tanh sigmoid eats small slope swings, so a ^1.5 curve keeps the
+    // knob's low end from feeling dead while mid-knob lands on the sweet zone.
+    static inline float formantDepthCurve(float depth) {
+        float d = clamp(depth, 0.f, 1.f);
+        return d * std::sqrt(d);
+    }
+
+    // sqrt curve: even-harmonic gain is compressed at the top, so give the
+    // low end of the knob more authority
+    static inline float formantAsymCurve(float asym) {
+        return 0.9f * std::sqrt(clamp(asym, 0.f, 1.f));
     }
 
     struct OscillatorPairFrame {
@@ -485,10 +536,6 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
         configParam(FINE1_PARAM, -FINE_TUNE_RANGE, FINE_TUNE_RANGE, 0.f, "v fine", " cents", 0.f, 100.f);
         configParam(FINE2_PARAM, -FINE_TUNE_RANGE, FINE_TUNE_RANGE, 0.f, "z fine", " cents", 0.f, 100.f);
         
-        // Fine tune CV attenuverters
-        ParameterHelper::configAttenuverter(this, FINE1_ATTEN_PARAM, "v fine tune cv");
-        ParameterHelper::configAttenuverter(this, FINE2_ATTEN_PARAM, "z fine tune cv");
-        
         // Shape morphing controls (default to 50% for proper sigmoid)
         ParameterHelper::configGain(this, SHAPE1_PARAM, "v shape", 0.5f);
         ParameterHelper::configGain(this, SHAPE2_PARAM, "z shape", 0.5f);
@@ -514,14 +561,19 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
                      {"\u00d70.5", "\u00d71", "\u00d71.5", "\u00d72", "\u00d73", "\u00d74", "\u00d75", "\u00d77"});
         ParameterHelper::configGain(this, FORMANT_ASYM_PARAM, "slope asymmetry", 0.35f);
         configParam(FORMANT_WIDTH_PARAM, 0.f, 1.f, 0.5f, "stereo width", "%", 0.f, 200.f);
+
+        // Formant CV attenuverters (V column scales depth, Z column scales asym)
+        ParameterHelper::configAttenuverter(this, FORMANT_DEPTH_ATTEN_PARAM, "formant depth cv");
+        ParameterHelper::configAttenuverter(this, FORMANT_WIDTH_ATTEN_PARAM, "stereo width cv");
+
         ParameterHelper::configAttenuverter(this, REV_CHANCE_ATTEN_PARAM, "rev sync flip chance cv");
         ParameterHelper::configGain(this, REV_CHANCE_PARAM, "rev sync flip chance", 1.f);
         
         // Inputs
         ParameterHelper::configCVInput(this, VOCT1_INPUT, "v osc v/oct");
         ParameterHelper::configCVInput(this, VOCT2_INPUT, "z osc v/oct");
-        ParameterHelper::configCVInput(this, FINE1_CV_INPUT, "v fine tune cv");
-        ParameterHelper::configCVInput(this, FINE2_CV_INPUT, "z fine tune cv");
+        ParameterHelper::configCVInput(this, FORMANT_DEPTH_CV_INPUT, "formant depth cv");
+        ParameterHelper::configCVInput(this, FORMANT_WIDTH_CV_INPUT, "stereo width cv");
         ParameterHelper::configCVInput(this, SHAPE1_CV_INPUT, "v shape cv");
         ParameterHelper::configCVInput(this, SHAPE2_CV_INPUT, "z shape cv");
         ParameterHelper::configCVInput(this, XFADE_CV_INPUT, "crossfade cv");
@@ -634,8 +686,8 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
             {
                 inputs[VOCT1_INPUT],
                 inputs[VOCT2_INPUT],
-                inputs[FINE1_CV_INPUT],
-                inputs[FINE2_CV_INPUT],
+                inputs[FORMANT_DEPTH_CV_INPUT],
+                inputs[FORMANT_WIDTH_CV_INPUT],
                 inputs[SHAPE1_CV_INPUT],
                 inputs[SHAPE2_CV_INPUT],
                 inputs[XFADE_CV_INPUT],
@@ -658,23 +710,7 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
         const float voiceCharacterLocal = vintageEff;
         const float outputColorLocal = vintageEff;
         const float formantRatioLocal = cachedFormantRatio;
-        // sqrt curve: even-harmonic gain is compressed at the top, so give the
-        // low end of the knob more authority
-        const float baseAsym = 0.9f * std::sqrt(clamp(cachedFormantAsym, 0.f, 1.f));
-        const float stereoWidthLocal = clamp(cachedFormantWidth, 0.f, 1.f);
-        // Width morphs the right copy's modulator phase from 0 (mono-coherent)
-        // through quadrature to anti-phase (180 degrees at full) so the L/R
-        // formant motion visibly opposes, plus a static slope offset.
-        const float widthPhase = 0.5f * stereoWidthLocal;
-        const float stereoScaleA = 1.f + 0.28f * stereoWidthLocal;
-        const float stereoScaleB = 1.f - 0.28f * stereoWidthLocal;
-        // Mid/side stage: knob 0 collapses to mono, center = natural stereo,
-        // full doubles the side content. The detuned copies carry a lot of
-        // natural side energy, so the lower half is squared to spread the
-        // mono->natural transition across the whole half instead of the
-        // first few degrees. Applied before the output soft clip.
-        const float widthT = 2.f * stereoWidthLocal;
-        const float widthSideGain = (widthT <= 1.f) ? widthT * widthT : widthT;
+        const float baseAsym = cachedBaseAsym;
         const bool mutualRevLocal = cachedMutualRev;
         float oversampleRate = args.sampleRate * oversample;
 
@@ -703,13 +739,13 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
             if (quantizeOscZ.load(std::memory_order_relaxed))
                 cachedBaseSemitoneZ = shapetaker::dsp::PitchHelper::quantizeToSemitone(cachedBaseSemitoneZ, FREQ2_ST_RANGE);
 
-            cachedFineTune1 = params[FINE1_PARAM].getValue();
-            cachedFineTune2 = params[FINE2_PARAM].getValue();
+            cachedFineTune1Oct = params[FINE1_PARAM].getValue() / SEMITONES_PER_OCTAVE;
+            cachedFineTune2Oct = params[FINE2_PARAM].getValue() / SEMITONES_PER_OCTAVE;
             cachedShape1 = params[SHAPE1_PARAM].getValue();
             cachedShape2 = params[SHAPE2_PARAM].getValue();
             cachedXfade = params[XFADE_PARAM].getValue();
-            cachedFine1Atten = params[FINE1_ATTEN_PARAM].getValue() * CV_FINE_SCALE;
-            cachedFine2Atten = params[FINE2_ATTEN_PARAM].getValue() * CV_FINE_SCALE;
+            cachedFormantDepthAtten = params[FORMANT_DEPTH_ATTEN_PARAM].getValue() * CV_FORMANT_SCALE;
+            cachedFormantWidthAtten = params[FORMANT_WIDTH_ATTEN_PARAM].getValue() * CV_FORMANT_SCALE;
             cachedShape1Atten = params[SHAPE1_ATTEN_PARAM].getValue() * CV_SHAPE_SCALE;
             cachedShape2Atten = params[SHAPE2_ATTEN_PARAM].getValue() * CV_SHAPE_SCALE;
             cachedXfadeAtten = params[XFADE_ATTEN_PARAM].getValue() * CV_XFADE_SCALE;
@@ -722,12 +758,15 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
             cachedFormantRatio = FORMANT_RATIOS[clamp((int)std::lround(params[FORMANT_RATIO_PARAM].getValue()), 0, 7)];
             cachedFormantAsym = params[FORMANT_ASYM_PARAM].getValue();
             cachedFormantWidth = params[FORMANT_WIDTH_PARAM].getValue();
+            cachedFormantDepthCurved = formantDepthCurve(cachedFormantDepth);
+            cachedBaseAsym = formantAsymCurve(cachedFormantAsym);
+            cachedWidthCoeffs = makeWidthCoeffs(cachedFormantWidth);
             cachedRevChanceAtten = params[REV_CHANCE_ATTEN_PARAM].getValue() * CV_REV_CHANCE_SCALE;
 
             // Cache input connection states
             cachedVoct2Connected = inputs[VOCT2_INPUT].isConnected();
-            cachedFine1CVConnected = inputs[FINE1_CV_INPUT].isConnected();
-            cachedFine2CVConnected = inputs[FINE2_CV_INPUT].isConnected();
+            cachedFormantDepthCVConnected = inputs[FORMANT_DEPTH_CV_INPUT].isConnected();
+            cachedFormantWidthCVConnected = inputs[FORMANT_WIDTH_CV_INPUT].isConnected();
             cachedShape1CVConnected = inputs[SHAPE1_CV_INPUT].isConnected();
             cachedShape2CVConnected = inputs[SHAPE2_CV_INPUT].isConnected();
             cachedXfadeCVConnected = inputs[XFADE_CV_INPUT].isConnected();
@@ -812,12 +851,16 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
                 pitch2 += vcPitchOffset[ch][1];
             }
 
-            float fineTune1 = applyAttenuvertedCv(cachedFineTune1, cachedFine1CVConnected, inputs[FINE1_CV_INPUT], ch, cachedFine1Atten, -FINE_TUNE_RANGE, FINE_TUNE_RANGE);
-            float fineTune2 = applyAttenuvertedCv(cachedFineTune2, cachedFine2CVConnected, inputs[FINE2_CV_INPUT], ch, cachedFine2Atten, -FINE_TUNE_RANGE, FINE_TUNE_RANGE);
+            const float fineTune1 = cachedFineTune1Oct;
+            const float fineTune2 = cachedFineTune2Oct;
 
-            // Convert semitone offsets to octaves
-            fineTune1 /= SEMITONES_PER_OCTAVE;
-            fineTune2 /= SEMITONES_PER_OCTAVE;
+            // Stereo width CV is additive to the panel knob through its
+            // bipolar attenuverter: at full magnitude 0..10 V spans the whole
+            // 0..200% range, and reversing the attenuverter subtracts it.
+            const WidthCoeffs widthCoeffs = cachedFormantWidthCVConnected
+                ? makeWidthCoeffs(applyAttenuvertedCv(cachedFormantWidth, true, inputs[FORMANT_WIDTH_CV_INPUT],
+                                                      ch, cachedFormantWidthAtten, 0.f, 1.f))
+                : cachedWidthCoeffs;
 
             float shape1 = applyAttenuvertedCv(cachedShape1, cachedShape1CVConnected, inputs[SHAPE1_CV_INPUT], ch, cachedShape1Atten, 0.f, 1.f);
             float shape2 = applyAttenuvertedCv(cachedShape2, cachedShape2CVConnected, inputs[SHAPE2_CV_INPUT], ch, cachedShape2Atten, 0.f, 1.f);
@@ -890,13 +933,14 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
             const float step2A_base = zOsc.deltaA + vs.z.a.noise * noiseScale;
             const float step2B_base = zOsc.deltaB + vs.z.b.noise * noiseScale;
 
-            // Formant section depth is set directly by its panel knob. The tanh
-            // sigmoid eats small slope swings, so a ^1.5 curve keeps the
-            // knob's low end from feeling dead while mid-knob lands on the
-            // sweet zone.
-            const float formantDepthKnob = clamp(cachedFormantDepth, 0.f, 1.f);
-            const float formantDepthLocal = formantDepthKnob * std::sqrt(formantDepthKnob);
-            const bool formantActive = formantDepthLocal > 0.001f || baseAsym > 0.001f || stereoWidthLocal > 0.001f;
+            // Formant depth CV is additive to the panel knob through its
+            // bipolar attenuverter, on the same 0..10 V full-range scaling as
+            // the asymmetry CV above.
+            const float formantDepthLocal = cachedFormantDepthCVConnected
+                ? formantDepthCurve(applyAttenuvertedCv(cachedFormantDepth, true, inputs[FORMANT_DEPTH_CV_INPUT],
+                                                        ch, cachedFormantDepthAtten, 0.f, 1.f))
+                : cachedFormantDepthCurved;
+            const bool formantActive = formantDepthLocal > 0.001f || baseAsym > 0.001f || widthCoeffs.width > 0.001f;
 
             for (int os = 0; os < oversample; os++) {
 
@@ -975,9 +1019,9 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
                         float pwDepth = 0.45f * formantDepthLocal;
                         float pwSkewK = 0.5f + 0.44f * baseAsym;
                         pw1A = clamp(vOsc.pwmShape + pwDepth * skewedSin2Pi(vs.v.a.phase * formantRatioLocal, pwSkewK), 0.05f, 0.95f);
-                        pw1B = clamp(vOsc.pwmShape + pwDepth * skewedSin2Pi(vs.v.a.phase * formantRatioLocal + widthPhase, pwSkewK), 0.05f, 0.95f);
+                        pw1B = clamp(vOsc.pwmShape + pwDepth * skewedSin2Pi(vs.v.a.phase * formantRatioLocal + widthCoeffs.phase, pwSkewK), 0.05f, 0.95f);
                         pw2A = clamp(zOsc.pwmShape + pwDepth * skewedSin2Pi(vs.z.a.phase * formantRatioLocal, pwSkewK), 0.05f, 0.95f);
-                        pw2B = clamp(zOsc.pwmShape + pwDepth * skewedSin2Pi(vs.z.a.phase * formantRatioLocal + widthPhase, pwSkewK), 0.05f, 0.95f);
+                        pw2B = clamp(zOsc.pwmShape + pwDepth * skewedSin2Pi(vs.z.a.phase * formantRatioLocal + widthCoeffs.phase, pwSkewK), 0.05f, 0.95f);
                     }
                     osc1A = OscillatorHelper::pwmWithPolyBLEP(vs.v.a.phase, pw1A, vOsc.deltaA);
                     osc1B = OscillatorHelper::pwmWithPolyBLEP(vs.v.b.phase, pw1B, vOsc.deltaB);
@@ -997,16 +1041,16 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
                         float base2 = vs.z.a.phase * formantRatioLocal;
                         float mv = OscillatorHelper::fastSin2Pi(base1);
                         float qv = OscillatorHelper::fastSin2Pi(base1 + 0.25f);
-                        float mvB = OscillatorHelper::fastSin2Pi(base1 + widthPhase);
-                        float qvB = OscillatorHelper::fastSin2Pi(base1 + 0.25f + widthPhase);
+                        float mvB = OscillatorHelper::fastSin2Pi(base1 + widthCoeffs.phase);
+                        float qvB = OscillatorHelper::fastSin2Pi(base1 + 0.25f + widthCoeffs.phase);
                         float mz = OscillatorHelper::fastSin2Pi(base2);
                         float qz = OscillatorHelper::fastSin2Pi(base2 + 0.25f);
-                        float mzB = OscillatorHelper::fastSin2Pi(base2 + widthPhase);
-                        float qzB = OscillatorHelper::fastSin2Pi(base2 + 0.25f + widthPhase);
-                        formantMod(vOsc.rangeBase, mv, qv, baseAsym, formantDepthLocal, stereoScaleA, r1A, c1A);
-                        formantMod(vOsc.rangeBase, mvB, qvB, baseAsym, formantDepthLocal, stereoScaleB, r1B, c1B);
-                        formantMod(zOsc.rangeBase, mz, qz, baseAsym, formantDepthLocal, stereoScaleA, r2A, c2A);
-                        formantMod(zOsc.rangeBase, mzB, qzB, baseAsym, formantDepthLocal, stereoScaleB, r2B, c2B);
+                        float mzB = OscillatorHelper::fastSin2Pi(base2 + widthCoeffs.phase);
+                        float qzB = OscillatorHelper::fastSin2Pi(base2 + 0.25f + widthCoeffs.phase);
+                        formantMod(vOsc.rangeBase, mv, qv, baseAsym, formantDepthLocal, widthCoeffs.scaleA, r1A, c1A);
+                        formantMod(vOsc.rangeBase, mvB, qvB, baseAsym, formantDepthLocal, widthCoeffs.scaleB, r1B, c1B);
+                        formantMod(zOsc.rangeBase, mz, qz, baseAsym, formantDepthLocal, widthCoeffs.scaleA, r2A, c2A);
+                        formantMod(zOsc.rangeBase, mzB, qzB, baseAsym, formantDepthLocal, widthCoeffs.scaleB, r2B, c2B);
                     } else {
                         r1A = r1B = vOsc.rangeBase;
                         r2A = r2B = zOsc.rangeBase;
@@ -1049,11 +1093,11 @@ struct ClairaudientModule : Module, IOscilloscopeSource {
                     rightOutput = baseRight + widthGain * rightCross;
                 }
 
-                if (widthSideGain != 1.f) {
+                if (widthCoeffs.sideGain != 1.f) {
                     float mid = 0.5f * (leftOutput + rightOutput);
                     float side = 0.5f * (leftOutput - rightOutput);
-                    leftOutput = mid + side * widthSideGain;
-                    rightOutput = mid - side * widthSideGain;
+                    leftOutput = mid + side * widthCoeffs.sideGain;
+                    rightOutput = mid - side * widthCoeffs.sideGain;
                 }
 
                 leftOutput = OscillatorHelper::fastTanh(leftOutput);
@@ -1240,6 +1284,16 @@ struct ClairaudientWidget : ShapetakerModuleWidget {
         // Clairaudient's artwork retains its original 20 HP viewBox and is
         // rendered at 18 HP. Apply the same 90% horizontal scale to control
         // centers so their normalized positions remain unchanged.
+        //
+        // This 0.9 is COUPLED TO THE SVG — see the header comment in
+        // res/panels/Clairaudient.svg. The file declares width="91.44mm" (18 HP)
+        // against viewBox="0 0 101.6 128.5" (20 HP), and nanosvg scales x and y
+        // independently because the root <svg> carries no preserveAspectRatio.
+        // PanelSVGParser returns raw file coordinates while mm2px() uses the y
+        // scale, so x needs 91.44/101.6 = 0.9 applied by hand. If the panel's
+        // viewBox is ever rebaked to 91.44, delete this lambda and use
+        // panelCenterPx directly — do not adjust the constant.
+        // scripts/check_panel_svgs.py fails the build if the SVG side drifts.
         auto centerPx = [&panelCenterPx](const std::string& id, float fallbackX, float fallbackY) {
             Vec center = panelCenterPx(id, fallbackX, fallbackY);
             center.x *= 0.9f;
@@ -1263,9 +1317,9 @@ struct ClairaudientWidget : ShapetakerModuleWidget {
         addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("fine_v", 29.5f, 47.834789f), module, ClairaudientModule::FINE1_PARAM));
         addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("fine_z", 72.1f, 47.834789f), module, ClairaudientModule::FINE2_PARAM));
 
-        // V/Z fine tune attenuverters — ShapetakerAttenuverterOscilloscope (10mm) + shadow
-        addKnobWithShadow(createParamCentered<ShapetakerAttenuverterOscilloscope>(centerPx("fine_atten_v", 11.5f, 42.361408f), module, ClairaudientModule::FINE1_ATTEN_PARAM));
-        addKnobWithShadow(createParamCentered<ShapetakerAttenuverterOscilloscope>(centerPx("fine_atten_z", 90.1f, 42.361408f), module, ClairaudientModule::FINE2_ATTEN_PARAM));
+        // V/Z shape attenuverters — sit above their shape knobs in each outer column
+        addKnobWithShadow(createParamCentered<ShapetakerAttenuverterOscilloscope>(centerPx("shape_atten_v", 11.5f, 42.361408f), module, ClairaudientModule::SHAPE1_ATTEN_PARAM));
+        addKnobWithShadow(createParamCentered<ShapetakerAttenuverterOscilloscope>(centerPx("shape_atten_z", 90.1f, 42.361408f), module, ClairaudientModule::SHAPE2_ATTEN_PARAM));
 
         // Crossfade control — Vintage medium (18mm) + shadow
         addKnobWithShadow(createParamCentered<ShapetakerKnobVintageMedium>(centerPx("x_fade_knob", 51.286224f, 56.527908f), module, ClairaudientModule::XFADE_PARAM));
@@ -1277,9 +1331,10 @@ struct ClairaudientWidget : ShapetakerModuleWidget {
         addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("sh_knob_v", 11.5f, 61.978146f), module, ClairaudientModule::SHAPE1_PARAM));
         addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("sh_knob_z", 90.1f, 61.978146f), module, ClairaudientModule::SHAPE2_PARAM));
 
-        // V/Z shape attenuverters — ShapetakerAttenuverterOscilloscope (10mm) + shadow
-        addKnobWithShadow(createParamCentered<ShapetakerAttenuverterOscilloscope>(centerPx("sh_cv_v", 11.5f, 79.612099f), module, ClairaudientModule::SHAPE1_ATTEN_PARAM));
-        addKnobWithShadow(createParamCentered<ShapetakerAttenuverterOscilloscope>(centerPx("sh_cv_z", 90.1f, 79.612099f), module, ClairaudientModule::SHAPE2_ATTEN_PARAM));
+        // Formant attenuverters — bottom of each outer column
+        // (V column scales DEPTH, Z column scales WIDTH)
+        addKnobWithShadow(createParamCentered<ShapetakerAttenuverterOscilloscope>(centerPx("formant_depth_atten", 11.5f, 79.612099f), module, ClairaudientModule::FORMANT_DEPTH_ATTEN_PARAM));
+        addKnobWithShadow(createParamCentered<ShapetakerAttenuverterOscilloscope>(centerPx("formant_width_atten", 90.1f, 79.612099f), module, ClairaudientModule::FORMANT_WIDTH_ATTEN_PARAM));
 
         // Formant section rows
         addKnobWithShadow(createParamCentered<ShapetakerKnobVintageSmallMedium>(centerPx("formant_depth", 12.95f, 98.f), module, ClairaudientModule::FORMANT_DEPTH_PARAM));
@@ -1303,13 +1358,13 @@ struct ClairaudientWidget : ShapetakerModuleWidget {
 
         // Input row 1: V oscillator — ShapetakerBNCPort (8mm)
         addInput(createInputCentered<ShapetakerBNCPort>(centerPx("v_oct_v", 11.f, 115.09749f), module, ClairaudientModule::VOCT1_INPUT));
-        addInput(createInputCentered<ShapetakerBNCPort>(centerPx("fine_cv_v", 22.371429f, 115.09749f), module, ClairaudientModule::FINE1_CV_INPUT));
+        addInput(createInputCentered<ShapetakerBNCPort>(centerPx("formant_depth_cv", 22.371429f, 115.09749f), module, ClairaudientModule::FORMANT_DEPTH_CV_INPUT));
         addInput(createInputCentered<ShapetakerBNCPort>(centerPx("shape_cv_v", 33.742857f, 115.09749f), module, ClairaudientModule::SHAPE1_CV_INPUT));
         addInput(createInputCentered<ShapetakerBNCPort>(centerPx("x_fade_cv", 51.628765f, 89.733727f), module, ClairaudientModule::XFADE_CV_INPUT));
 
         // Input row 2: Z oscillator
         addInput(createInputCentered<ShapetakerBNCPort>(centerPx("v_out_z", 67.857143f, 115.09749f), module, ClairaudientModule::VOCT2_INPUT));
-        addInput(createInputCentered<ShapetakerBNCPort>(centerPx("fine_cv_z", 79.228571f, 115.09749f), module, ClairaudientModule::FINE2_CV_INPUT));
+        addInput(createInputCentered<ShapetakerBNCPort>(centerPx("formant_width_cv", 79.228571f, 115.09749f), module, ClairaudientModule::FORMANT_WIDTH_CV_INPUT));
         addInput(createInputCentered<ShapetakerBNCPort>(centerPx("shape_cv_z", 90.6f, 115.09749f), module, ClairaudientModule::SHAPE2_CV_INPUT));
         addInput(createInputCentered<ShapetakerBNCPort>(centerPx("rev_chance_cv", 50.8f, 102.24656f), module, ClairaudientModule::REV_CHANCE_CV_INPUT));
 

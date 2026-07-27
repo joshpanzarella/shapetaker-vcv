@@ -3583,6 +3583,17 @@ static inline void addAlchemicalBadge(ModuleWidget* w, int symbolId) {
     w->addChild(badge);
 }
 
+// Shared leather-grain panel texture.  Window::loadImage() is cached by filename,
+// so this is a hash lookup rather than a decode — but asset::plugin() builds a
+// fresh std::string every call, which adds up once per module per frame.  Hoist
+// the path into a function-local static and keep loadImage() in the hot path, so
+// the Window still owns the image's lifetime across window teardown/recreation.
+static inline std::shared_ptr<Image> panelBackgroundImage() {
+    static const std::string path =
+        asset::plugin(pluginInstance, "res/panels/panel_background.png");
+    return APP->window->loadImage(path);
+}
+
 // ---------------------------------------------------------------------------
 // ShapetakerModuleWidget
 // Base class for all Shapetaker module widgets.  Handles the shared leather-
@@ -3593,15 +3604,16 @@ static inline void addAlchemicalBadge(ModuleWidget* w, int symbolId) {
 // across all panels without any per-module duplication.
 // ---------------------------------------------------------------------------
 struct ShapetakerModuleWidget : ModuleWidget {
-    static constexpr float BG_TEXTURE_ASPECT = 2880.f / 4553.f; // panel_background.png
+    // Must match res/panels/panel_background.png's real pixel dimensions (2048x3238).
+    // Getting this wrong stretches the tile and shifts the seam-softening pass below.
+    static constexpr float BG_TEXTURE_ASPECT = 2048.f / 3238.f; // panel_background.png
     static constexpr float BG_INSET          = 2.0f;
     static constexpr float BG_OFFSET_OPACITY = 0.35f;
     static constexpr int   BG_DARKEN_ALPHA   = 18;
     static constexpr float FRAME_WIDTH       = 1.0f;
 
     void draw(const DrawArgs& args) override {
-        std::shared_ptr<Image> bg = APP->window->loadImage(
-            asset::plugin(pluginInstance, "res/panels/panel_background.png"));
+        std::shared_ptr<Image> bg = panelBackgroundImage();
         if (bg) {
             float tileH = box.size.y + BG_INSET * 2.f;
             float tileW = tileH * BG_TEXTURE_ASPECT;

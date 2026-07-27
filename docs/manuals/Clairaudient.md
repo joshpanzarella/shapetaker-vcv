@@ -1,44 +1,47 @@
-# Clairaudient — Operating Manual
+# Clairaudient: Operating Manual
 
-*A polyphonic dual sigmoid oscillator with an internal formant section for the VCV Rack environment — part of the Shapetaker series.*
+*A polyphonic dual-oscillator with an internal formant section, crossfader, and reverse sync. Perfect for your next séance.*
+
+interactive manual: https://shapetaker.com/modules/clairaudient
 
 ## Description
 
-The Clairaudient module is a precision polyphonic dual-oscillator system (supporting up to 16 simultaneous voices) engineered for rich timbral movement and expansive stereophonic imaging. The instrument is centered around two distinct oscillator cores, designated **V** and **Z**, which may be seamlessly blended, shaped, and set against one another.
+The Clairaudient is a polyphonic dual-oscillator system engineered for timbral movement and expansive stereophonic imaging. The instrument is centered around two distinct oscillator cores, designated **V** and **Z**.
 
-Departing from traditional analog wave generation, Clairaudient builds its waveform around a mathematical sigmoid curve: a sawtooth whose central edge can be reshaped from a gentle ramp to a razor-sharp transition. What distinguishes the instrument is that this edge does not have to sit still. The onboard **Formant section** modulates the curve's slope and symmetry at audio rate, locked to the pitch of each oscillator, so the harmonics inside every note shift and swirl on their own — no external modulation required. The effect is reminiscent of vowels, brass, and voices emerging from within the tone; hence the name.
+Clairaudient builds its waveform around a mathematical sigmoid curve. A sawtooth type wave whose central edge can be reshaped from a softer ramp to a sharper, square-like transition. The onboard **Formant section** modulates the curve's slope and symmetry at audio rate, locked to the pitch of each oscillator, so the harmonics inside every note shift and swirl. The effect can provide a more cutting, brighter timbre.
+
+Both oscillator cores can be crossfaded using CV and pushed to the outer edge of your speakers using the **WIDTH** knob. Widening works by amplifing the sides while driving the Formant section’s motion progressively further out of phase.
 
 ## Initial Operation
 
-1. Connect a standard 1V/Octave pitch source to the **V/OCT V** input jack.
-2. Route the **L** and **R** audio outputs to a suitable mixer or voltage-controlled amplifier (VCA).
-3. Set the central **Crossfade** control to its midpoint so both oscillators are audible.
-4. The factory settings of the Formant column (DEPTH, RATIO, ASYM, WIDTH) are already active — you should hear a moving, vocal quality immediately. Sweep the **V Shape** and **Z Shape** controls to audition the range from smooth ramp to hard edge.
-5. Flip the **REV. SYNC** switch to its middle position and listen to the character turn feral. Return it to OFF when decorum must be restored.
+1. Connect pitch source to the **V/OCT - V side** input jack.
+2. Route the **L** and **R** audio outputs to a mixer or VCA.
+3. Set the **XFADE** control to its midpoint (default).
+4. Sweep the **V Shape** and **Z Shape** controls to hear the range of timbres.
+5. Flip the **REV. SYNC** switch to its middle position and listen to the character turn gnarly. Flip it to "mutual" and turn the reverse sync flip chance knob to channel the chaotic circuit spirits.
 
 ## Architecture
 
 ### Oscillator V
 Core V is the first of the twin oscillator paths.
-- **Oscillator V Pitch (Octave):** By default, this rotary switch snaps precisely to musical octaves (±2 octaves) for stable octave layering.
-- **Fine Tune:** Precise pitch adjustment over a ±20 cent range.
-- **Shape:** Sweeps the sigmoid curve. The morph from sawtooth to a square-like wave completes in roughly the first half of the knob's travel; the remainder of the sweep sharpens the transition edge further and further, ending well past "square" in genuinely aggressive territory. The journey is the point — the middle of this knob is where the Formant section has the most material to work with.
+- **Pitch (Octave):** by default, snaps to musical octaves (±2 octaves) for octave layering.
+- **Fine Tune:** more precise pitch adjustment over a ±20 cent range.
+- **Shape:** sweeps the sigmoid curve. The wave morph completes in roughly the first half of the knob's travel. The middle of this knob is where the Formant section has the most material to work with.
 
 ### Oscillator Z
 Core Z operates in parallel with Core V.
-- **Oscillator Z Pitch (Semitone):** Snaps to discrete semitones over a four-octave range (±24 semitones) for immediate interval selection.
-- **Fine Tune / Shape:** Operate identically to their Core V counterparts, fully independent.
+- **Z Pitch (Semitone):** by default, maps to discrete semitones over a four-octave range (±24 semitones).
+- **Fine Tune / Shape:** operates identically to Core V, but fully independent.
 
-*Note: The primary rotary controls are equipped with dedicated CV attenuverters located near them.*
 
-### The Formant Section
+### Formant Section
 
-The right-hand column is the heart of the instrument: an internal modulator, running at audio rate and locked to each oscillator's own pitch, that animates the sigmoid curve from within. Because it tracks pitch, the character it imparts stays consistent across an entire melody — play two independent lines into V and Z and each keeps its voice.
+An internal modulator that runs at audio rate, locks to each oscillator's own pitch, and animates the sigmoid curve from within. Because it tracks pitch, the character stays consistent; play two independent lines into V and Z (using both v/oct inputs) and each keeps its voice.
 
-- **DEPTH (Knob):** How far the modulator bends the curve within each waveform cycle. At zero the waveform is frozen and traditional. As depth rises, a formant-like sweep opens up inside every note. The lower quarter of the knob is subtle by nature; the voice truly clears its throat from the midpoint onward.
+- **DEPTH:** How far the modulator bends the curve within each waveform cycle. At zero the waveform is frozen and traditional. As depth rises, a formant-like sweep opens up inside every note. The lower quarter of the knob is subtle by nature; the voice truly clears its throat from the midpoint onward. An envelope into DEPTH CV is the most direct way to make each note speak as it sounds.
 - **RATIO (Knob):** The modulator's speed as a multiple of the oscillator's pitch, snapped to eight musical ratios (×0.5, ×1, ×1.5, ×2, ×3, ×4, ×5, ×7). Low integers (×2, ×3) give vowel and brass formants; high ones (×5, ×7) turn metallic and bell-like; ×0.5 repeats its pattern every *two* cycles, adding a growling octave-down component.
 - **ASYM (Knob):** Skews the wave's symmetry. A symmetric square-like wave contains only odd harmonics — the hollow, chiptune sound. Asymmetry pours in the missing even harmonics: brassy, reedy, vocal. Its effect is strongest when Shape is high (where the wave is most symmetric) and nearly inaudible when Shape is low (a sawtooth already owns every harmonic). In PWM mode this knob takes on a related duty: see Waveform Selection below.
-- **WIDTH (Knob):** A true mono-to-wide control, displayed 0–200%. At 0% the output collapses to mono — a useful reference point. 100% (center) is natural stereo. Beyond center, the side content is amplified and the Formant section’s motion in the two channels is driven progressively out of phase, until at 200% the left channel's formant sweeps upward while the right sweeps downward. Extreme settings gain a touch of output saturation by design.
+- **WIDTH (Knob, CV & Attenuverter):** A true mono-to-wide control, displayed 0–200%. At 0% the output collapses to mono — a useful reference point. 100% (center) is natural stereo. Beyond center, the side content is amplified and the Formant section’s motion in the two channels is driven progressively out of phase, until at 200% the left channel's formant sweeps upward while the right sweeps downward. Extreme settings gain a touch of output saturation by design.
 - **CHANCE (Small Knob, CV & Attenuverter):** Governs the Reverse Sync behavior described below. The dedicated bipolar attenuverter sets the amount and polarity of REV. CH. CV modulation.
 
 ### Blending and Synchronization
@@ -70,8 +73,9 @@ These interact pleasantly with the WIDTH control, which operates on the final st
 
 - **V OSC V/OCT:** Pitch tracking input for Core V (1 Volt per Octave).
 - **Z OSC V/OCT:** Pitch tracking input for Core Z. *Internally normalized to the V OSC input — one pitch CV drives both cores unless this jack is patched. The normalization is per-voice: if a polyphonic cable here carries fewer channels than the V input, the uncovered voices follow their V counterparts rather than falling silent or detuning.*
-- **V FINE CV / Z FINE CV:** Control voltage inputs for fine-tuning (attenuated for delicate vibrato work).
-- **V SHAPE CV / Z SHAPE CV:** Control voltage inputs for waveform shaping. Audio-rate signals are fair game.
+- **V SHAPE CV / Z SHAPE CV:** Control voltage inputs for waveform shaping, each with a bipolar attenuverter above its Shape knob. Audio-rate signals are fair game.
+- **DEPTH CV:** 0–10 V control voltage input for Formant **DEPTH**, sharing the V column with that oscillator's V/Oct. Its bipolar attenuverter sits at the foot of the V column, directly above the DEPTH knob. At full positive attenuation, 0–10 V adds 0–100 percentage points to the knob; reversing the attenuverter subtracts the same amount. The result is clamped to 0–100%. Polyphonic.
+- **WIDTH CV:** 0–10 V control voltage input for Formant **WIDTH**, in the Z column beside that oscillator's V/Oct, with its bipolar attenuverter at the foot of that column. At full positive attenuation, 0–10 V sweeps the full 0–200% width range on top of the knob; reversing the attenuverter subtracts it. Polyphonic, and genuinely per-voice — each polyphonic voice runs its own mid/side stage, so a chord can have its notes sitting at different widths.
 - **CROSSFADE CV:** Control voltage input for the master mixing stage.
 - **REV. CH. CV:** 0–10 V control voltage input for reverse-sync flip chance, with bipolar attenuverter. At full positive attenuation, 0–10 V adds 0–100 percentage points to the **REV. CHANCE** knob; reversing the attenuverter subtracts the same amount. The result is clamped to 0–100%. Polyphonic.
 - **L / R OUT:** Master stereophonic audio outputs. For monophonic operation, use the **L** output (or simply set WIDTH to 0%).
@@ -95,13 +99,13 @@ The context menu (right-click) is deliberately brief:
 Leave everything at default. Play a slow melody into V/OCT. The Formant Section defaults (DEPTH 50%, RATIO ×2, ASYM 35%, WIDTH 100%) produce the module's signature vocal shimmer with no patching at all.
 
 **Brass Séance:**
-Sigmoid Saw mode, Shape at ~85%, DEPTH at 50%. Sweep ASYM slowly from zero: the tone transforms from hollow woodwind to full brass section as the even harmonics arrive. Modulate the Shape CV inputs with an envelope so each note swells into speech.
+Sigmoid Saw mode, Shape at ~85%, DEPTH at 50%. Sweep ASYM slowly from zero: the tone transforms from hollow woodwind to full brass section as the even harmonics arrive. Patch an envelope into DEPTH CV so each note swells into speech as it sounds.
 
 **The Broken Radio:**
 Set REV. SYNC to MUTUAL and CHANCE to 100%. Detune Z a fifth from V. Now ride CHANCE between 60% and 100%, or patch an LFO or stepped random source into REV. CH. CV — the two cores lurch between locked snarling and staggering collapse. WIDTH at 200% spreads the wreckage across the stereo field.
 
 **Massive Stereo Ensemble:**
-Crossfade Curve to Stereo Swap, Vintage to ~70%, WIDTH to 150%. Modulate Crossfade CV and Z Fine CV with slow, independent LFOs. The drift, voice tolerances, and opposing formant motion combine into an exceptionally wide, organic ensemble.
+Crossfade Curve to Stereo Swap, Vintage to ~70%, WIDTH to 150%. Modulate Crossfade CV and WIDTH CV with slow, independent LFOs. The drift, voice tolerances, and opposing formant motion combine into an exceptionally wide, organic ensemble.
 
 **Lopsided PWM Throb:**
 Waveform Mode to PWM, Shape at ~40%, DEPTH at 60%, RATIO ×1. Sweep ASYM upward and the even pulse shimmer becomes a rhythmic, dub-flavored lean. WIDTH pushes the throb out of phase between the speakers.

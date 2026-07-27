@@ -331,6 +331,11 @@ private:
         return -y * (0.225f * (absY - 1.0f) + 1.0f); // smooth, sign-corrected
     }
 
+    // NOTE: OscillatorHelper (src/dsp/oscillators.hpp) carries its own copies of
+    // fastSin2Pi and fastTanh, and every module calls *those*. The two sines are
+    // NOT interchangeable: this one returns +sin(2*pi*phase), OscillatorHelper's
+    // returns -sin(2*pi*phase). Keep any fix applied to both, and mind the sign.
+
     // Pre-emphasis: boost highs before distortion (2.5 kHz shelf, up to +6 dB).
     // alpha is precomputed in setSampleRate() — no expf() per sample.
     float preEmphasis(float input, float drive) {
@@ -362,14 +367,26 @@ private:
 
     // Fast tanh approximation (rational Padé-style) — brighter, harder knee
     // than the old x/(1+|x|) curve, exact to float precision for |x| < 3.
+    //
+    // The bail-out sits at |x| > 5, not |x| > 3. The rational is still accurate
+    // there (tanh(5) = 0.9999092), so returning a flat +/-1.0 at |x| = 3 used to
+    // put a 0.00494 step — half a percent of full scale — into the middle of the
+    // transfer curve. Any signal crossing that threshold picked up the step as
+    // high-order harmonic splatter: measured -57 dB relative to the saturated
+    // output at drive 4.0, against -103 dB with the knee where it is now.
+    // Below |x| = 3 this is bit-identical to the previous version.
+    //
+    // The rational overshoots 1.0 very slightly just before the bail-out
+    // (1.0000098 at x = 5), so the result is clamped rather than trusted.
     static inline float fastTanh(float x) {
         float x2 = x * x;
-        if (x2 > 9.0f) {
+        if (x2 > 25.0f) {
             return x > 0.0f ? 1.0f : -1.0f;
         }
         float a = x * (135135.0f + x2 * (17325.0f + x2 * (378.0f + x2)));
         float b = 135135.0f + x2 * (62370.0f + x2 * (3150.0f + x2 * 28.0f));
-        return a / b;
+        float y = a / b;
+        return y < -1.0f ? -1.0f : (y > 1.0f ? 1.0f : y);
     }
 
     // One triode-ish gain stage. Positive swings saturate early and softly
