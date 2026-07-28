@@ -1,9 +1,6 @@
 # Shapetaker
 
 Shapetaker is a collection of modules for [VCV Rack 2](https://vcvrack.com/)
-focused on characterful oscillators and organic, hardware-inspired sound —
-vintage-styled panels, CRT-style displays, and DSP with deliberate analog
-imperfection baked in.
 
 ## Modules
 
@@ -15,8 +12,8 @@ crossfading.
 - Two oscillators, each running a symmetric-detuned stereo pair, with
   saw-to-sigmoid waveform morphing (or PWM mode) and polyBLEP/oversampled
   anti-aliasing.
-- **Voice engine**: internal audio-rate modulation of the sigmoid slope and
-  transition center, ratio-locked to each oscillator's pitch — DEPTH, RATIO,
+- **Formant engine**: internal audio-rate modulation of the sigmoid slope and
+  transition center, ratio-locked to each oscillator's pitch. DEPTH, RATIO,
   ASYM, and a true mono-to-wide WIDTH control.
 - Cross-sync and reverse sync (off / on / mutual) with a CHANCE control for
   probabilistic direction flips.
