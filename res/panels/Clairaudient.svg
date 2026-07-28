@@ -30,6 +30,7 @@
   …) are load-bearing too: PanelSVGParser reads control positions out of them.
   Keep their ids and geometry in sync with src/clairaudient.cpp.
 -->
+
 <svg
    width="91.44mm"
    height="128.5mm"
@@ -55,9 +56,9 @@
    inkscape:pagecheckerboard="0"
    inkscape:deskcolor="#505050"
    inkscape:document-units="mm"
-   inkscape:zoom="5.8221629"
-   inkscape:cx="186.52862"
-   inkscape:cy="392.98111"
+   inkscape:zoom="5.4115423"
+   inkscape:cx="170.56136"
+   inkscape:cy="452.92078"
    inkscape:window-width="1800"
    inkscape:window-height="1102"
    inkscape:window-x="0"
@@ -1265,11 +1266,11 @@
    id="text35-4"
    style="font-stretch:condensed;font-size:5.64444px;line-height:0;font-family:'Routed Gothic Narrow';-inkscape-font-specification:'Routed Gothic Narrow, Condensed';text-align:center;letter-spacing:0px;word-spacing:0.132292px;text-anchor:middle;opacity:0.594203;fill:#eedcbb;fill-opacity:0.890196;fill-rule:evenodd;stroke-width:0.1;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
    aria-label="Z" /><path
-   d="m 45.365413,120.86662 q 0.0434,0.0434 0.0434,0.10542 0,0.062 -0.0434,0.10542 -0.0434,0.0434 -0.10542,0.0434 h -0.38758 v 0.5209 q 0,0.062 -0.0434,0.10542 -0.0434,0.0434 -0.10542,0.0434 -0.062,0 -0.10542,-0.0434 -0.0434,-0.0434 -0.0434,-0.10542 v -0.5209 h -0.38757 q -0.062,0 -0.10542,-0.0434 -0.0434,-0.0434 -0.0434,-0.10542 0,-0.062 0.0434,-0.10542 0.0434,-0.0434 0.10542,-0.0434 h 0.38757 v -0.5209 q 0,-0.062 0.0434,-0.10542 0.0434,-0.0434 0.10542,-0.0434 0.062,0 0.10542,0.0434 0.0434,0.0434 0.0434,0.10542 v 0.5209 h 0.38758 q 0.062,0 0.10542,0.0434 z"
+   d="m 45.365413,121.19257 q 0.0434,0.0434 0.0434,0.10542 0,0.062 -0.0434,0.10542 -0.0434,0.0434 -0.10542,0.0434 h -0.38758 v 0.5209 q 0,0.062 -0.0434,0.10542 -0.0434,0.0434 -0.10542,0.0434 -0.062,0 -0.10542,-0.0434 -0.0434,-0.0434 -0.0434,-0.10542 v -0.5209 h -0.38757 q -0.062,0 -0.10542,-0.0434 -0.0434,-0.0434 -0.0434,-0.10542 0,-0.062 0.0434,-0.10542 0.0434,-0.0434 0.10542,-0.0434 h 0.38757 v -0.5209 q 0,-0.062 0.0434,-0.10542 0.0434,-0.0434 0.10542,-0.0434 0.062,0 0.10542,0.0434 0.0434,0.0434 0.0434,0.10542 v 0.5209 h 0.38758 q 0.062,0 0.10542,0.0434 z"
    id="text1"
    style="font-stretch:condensed;font-size:3.175px;line-height:0;font-family:'Routed Gothic Narrow';-inkscape-font-specification:'Routed Gothic Narrow, Condensed';text-align:center;letter-spacing:0px;word-spacing:0.132292px;text-anchor:middle;opacity:0.681159;fill:#eedcbb;fill-opacity:0.890196;fill-rule:evenodd;stroke-width:0.1;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
    aria-label="+" /><path
-   d="m 56.186023,121.07746 q -0.0434,-0.0434 -0.0434,-0.10542 0,-0.062 0.0434,-0.10542 0.0434,-0.0434 0.10542,-0.0434 h 0.63562 q 0.062,0 0.10542,0.0434 0.0434,0.0434 0.0434,0.10542 0,0.062 -0.0434,0.10542 -0.0434,0.0434 -0.10542,0.0434 h -0.63562 q -0.062,0 -0.10542,-0.0434 z"
+   d="m 56.186023,121.40341 q -0.0434,-0.0434 -0.0434,-0.10542 0,-0.062 0.0434,-0.10542 0.0434,-0.0434 0.10542,-0.0434 h 0.63562 q 0.062,0 0.10542,0.0434 0.0434,0.0434 0.0434,0.10542 0,0.062 -0.0434,0.10542 -0.0434,0.0434 -0.10542,0.0434 h -0.63562 q -0.062,0 -0.10542,-0.0434 z"
    id="text2"
    style="font-stretch:condensed;font-size:3.175px;line-height:0;font-family:'Routed Gothic Narrow';-inkscape-font-specification:'Routed Gothic Narrow, Condensed';text-align:center;letter-spacing:0px;word-spacing:0.132292px;text-anchor:middle;opacity:0.681159;fill:#eedcbb;fill-opacity:0.890196;fill-rule:evenodd;stroke-width:0.1;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
    aria-label="-" /><path

@@ -63,7 +63,7 @@
        id="linearGradient27"
        inkscape:collect="always">
       <stop
-         style="stop-color:#4d493d;stop-opacity:0.89019602;"
+         style="stop-color:#4d493d;stop-opacity:1;"
          offset="0.53367877"
          id="stop27" />
       <stop
@@ -243,13 +243,14 @@
      y="7.2019377"
      ry="0.95955956" />
   <rect
-     style="opacity:0.85;fill:url(#linearGradient28);fill-rule:evenodd;stroke:none;stroke-width:0.123372;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.123372, 0.740231;stroke-opacity:0.890196;paint-order:fill markers stroke"
-     id="rect1"
+     style="display:inline;opacity:1;fill:url(#linearGradient28);fill-rule:evenodd;stroke-width:0.123372;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.123372, 0.740231;stroke-opacity:0.890196;paint-order:fill markers stroke"
+     id="main-plate"
      width="50.14753"
      height="11.032456"
      x="-0.07376463"
      y="2.8014748"
-     ry="1.2494608" />
+     ry="1.2494608"
+     inkscape:label="main-plate" />
   <rect
      style="fill:#10100f;fill-opacity:0.890196;fill-rule:evenodd;stroke:none;stroke-width:0.129614;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.129614, 0.777685;stroke-opacity:0.890196;paint-order:fill markers stroke"
      id="rect3"
@@ -260,8 +261,7 @@
      ry="0.69306529" />
   <g
      id="g5-3"
-     transform="matrix(1.2337163,0,0,1.2337163,37.066059,-6.8633799)"
-     style="stroke-width:0.04052796;stroke-dasharray:none;stroke:#000000;stroke-opacity:1">
+     transform="matrix(1.2337163,0,0,1.2337163,37.066059,-6.8633799)">
     <circle
        style="opacity:1;fill:url(#linearGradient5);fill-opacity:0.890196;fill-rule:evenodd;stroke:#000000;stroke-width:0.04052796;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke;stroke-dashoffset:0"
        id="path1-1"
@@ -269,14 +269,14 @@
        cy="12.452928"
        r="0.99771231" />
     <rect
-       style="opacity:1;fill:#2b2b2b;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.04052796;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       style="opacity:1;fill:#2b2b2b;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.1;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.1, 0.600001;stroke-opacity:0.890196;paint-order:fill markers stroke"
        id="rect4-7"
        width="0.30064228"
        height="1.1739365"
        x="7.5303736"
        y="11.825263" />
     <rect
-       style="opacity:1;fill:#2b2b2b;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.04052796;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       style="opacity:1;fill:#2b2b2b;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.1;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.1, 0.600001;stroke-opacity:0.890196;paint-order:fill markers stroke"
        id="rect5-1"
        width="1.2025691"
        height="0.31495857"
@@ -348,23 +348,22 @@
      ry="5.6507292" />
   <g
      id="g5"
-     transform="matrix(1.2337163,0,0,1.2337163,-5.8429076,-6.8633799)"
-     style="stroke:#000000;stroke-opacity:1;stroke-width:0.04052796;stroke-dasharray:none">
+     transform="matrix(1.2337163,0,0,1.2337163,-5.8429076,-6.8633799)">
     <circle
-       style="opacity:1;fill:url(#linearGradient2);fill-opacity:0.890196;fill-rule:evenodd;stroke:#000000;stroke-width:0.04052796;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       style="opacity:1;fill:url(#linearGradient2);fill-opacity:0.890196;fill-rule:evenodd;stroke:#000000;stroke-width:0.04052796;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke;stroke-dashoffset:0"
        id="path1"
        cx="7.6663923"
        cy="12.452928"
        r="0.99771231" />
     <rect
-       style="opacity:1;fill:#2b2b2b;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.04052796;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       style="opacity:1;fill:#2b2b2b;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.1;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.1, 0.600001;stroke-opacity:0.890196;paint-order:fill markers stroke"
        id="rect4"
        width="0.30064228"
        height="1.1739365"
        x="7.5303736"
        y="11.825263" />
     <rect
-       style="opacity:1;fill:#2b2b2b;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.04052796;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       style="opacity:1;fill:#2b2b2b;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.1;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.1, 0.600001;stroke-opacity:0.890196;paint-order:fill markers stroke"
        id="rect5"
        width="1.2025691"
        height="0.31495857"

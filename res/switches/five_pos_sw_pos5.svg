@@ -112,7 +112,7 @@
          id="stop29" /></linearGradient><linearGradient
        id="linearGradient27"
        inkscape:collect="always"><stop
-         style="stop-color:#4d493d;stop-opacity:0.89019602;"
+         style="stop-color:#4d493d;stop-opacity:1;"
          offset="0.53367877"
          id="stop27" /><stop
          style="stop-color:#4d493d;stop-opacity:0;"
@@ -293,13 +293,14 @@
      x="6.0365701"
      y="7.2019377"
      ry="0.95955956" /><rect
-     style="opacity:0.85;fill:url(#linearGradient28);fill-rule:evenodd;stroke:none;stroke-width:0.123372;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.123372,0.740231;stroke-opacity:0.890196;paint-order:fill markers stroke"
-     id="rect1"
+     style="display:inline;opacity:1;fill:url(#linearGradient28);fill-rule:evenodd;stroke-width:0.123372;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.123372, 0.740231;stroke-opacity:0.890196;paint-order:fill markers stroke"
+     id="main-plate"
      width="50.14753"
      height="11.032456"
      x="-0.07376463"
      y="2.8014748"
-     ry="1.2494608" /><ellipse
+     ry="1.2494608"
+     inkscape:label="main-plate" /><ellipse
      style="opacity:0.144357;fill:url(#linearGradient4);fill-rule:evenodd;stroke:#373737;stroke-width:0.0910967;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:0.890196;paint-order:fill markers stroke"
      id="path2"
      cx="-35.698112"
@@ -316,7 +317,7 @@
      ry="0.69306529" /><g
      id="g5-3"
      transform="matrix(1.2337163,0,0,1.2337163,37.066059,-6.8633799)"><circle
-       style="opacity:1;fill:url(#linearGradient5);fill-opacity:0.890196;fill-rule:evenodd;stroke:none;stroke-width:0.1;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.1, 0.600001;stroke-opacity:0.890196;paint-order:fill markers stroke"
+       style="opacity:1;fill:url(#linearGradient5);fill-opacity:0.890196;fill-rule:evenodd;stroke:#000000;stroke-width:0.04052796;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke;stroke-dashoffset:0"
        id="path1-1"
        cx="7.6663923"
        cy="12.452928"

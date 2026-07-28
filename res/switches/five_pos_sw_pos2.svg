@@ -112,7 +112,7 @@
          id="stop29" /></linearGradient><linearGradient
        id="linearGradient27"
        inkscape:collect="always"><stop
-         style="stop-color:#4d493d;stop-opacity:0.89019602;"
+         style="stop-color:#4d493d;stop-opacity:1;"
          offset="0.53367877"
          id="stop27" /><stop
          style="stop-color:#4d493d;stop-opacity:0;"
@@ -276,13 +276,14 @@
      x="6.0365701"
      y="7.2019377"
      ry="0.95955956" /><rect
-     style="opacity:0.85;fill:url(#linearGradient28);fill-rule:evenodd;stroke:none;stroke-width:0.123372;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.123372, 0.740231;stroke-opacity:0.890196;paint-order:fill markers stroke"
-     id="rect1"
+     style="display:inline;opacity:1;fill:url(#linearGradient28);fill-rule:evenodd;stroke-width:0.123372;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.123372, 0.740231;stroke-opacity:0.890196;paint-order:fill markers stroke"
+     id="main-plate"
      width="50.14753"
      height="11.032456"
      x="-0.07376463"
      y="2.8014748"
-     ry="1.2494608" /><ellipse
+     ry="1.2494608"
+     inkscape:label="main-plate" /><ellipse
      style="opacity:0.144357;fill:url(#linearGradient4);fill-rule:evenodd;stroke:#373737;stroke-width:0.0895687;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:0.890196;paint-order:fill markers stroke"
      id="path2"
      cx="23.866142"
