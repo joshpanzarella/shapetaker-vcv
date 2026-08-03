@@ -12,6 +12,10 @@ extern Plugin* pluginInstance;
 #include "ui/label_formatter.hpp"
 
 extern Model* modelClairaudient;
+extern Model* modelChiaroscuro;
+extern Model* modelInvolution;
+extern Model* modelSpecula;
+extern Model* modelUtilityPanel;
 
 /**
  * Base knob class with universal fallback indicator support.
@@ -3161,55 +3165,190 @@ struct VintageOscilloscopeWidget : widget::Widget {
 };
 
 // Capacitive touch switch (brass touch pad like touch strip)
+/**
+ * Capacitive touch pad: a machined brass plate inside a raised bezel.
+ *
+ * The plate's curvature is the *press*, not a fixed feature. At rest it reads
+ * gently convex (light at the top, dark at the bottom — same sense as the
+ * bezel), so it sits proud of the panel. Pressing inverts the gradient and
+ * deepens the lip shadow, and the plate reads concave. A permanent dish was
+ * tried first and looked like it was already held down; curvature that only
+ * appears under the cursor is what gives it a push.
+ *
+ * Note that this is the opposite call from TouchStripWidget, whose trough is
+ * permanent: on a strip you slide along, a standing groove is an invitation,
+ * not a pressed state.
+ *
+ * Hover and press are drawn at all because the pad is otherwise visually
+ * inert: its latched state lives on a separate status LED, so previously
+ * nothing about it changed on mouse-over or click and it read as painted-on
+ * panel art rather than a control.
+ *
+ * Lit from the upper left, matching drawPanelCircularSeat().
+ */
 struct CapacitiveTouchSwitch : app::SvgSwitch {
+    // Geometry as a fraction of the pad radius
+    static constexpr float DISH_RADIUS = 0.78f;   // where the bezel steps down
+    // Specular origin, in radius units from centre
+    static constexpr float LIGHT_X = -0.42f;
+    static constexpr float LIGHT_Y = -0.58f;
+    // How far the plate visually sinks when held
+    static constexpr float PRESS_SINK_PX = 0.6f;
+    // Warmth held while latched on. Deliberately restrained — the status LED
+    // is the primary state indicator; set to 0 to keep the pad state-neutral.
+    static constexpr float ENGAGED_BLOOM = 0.30f;
+    static constexpr float HOVER_BLOOM = 0.22f;
+    static constexpr float PRESS_BLOOM = 0.30f;
+    static constexpr float BASE_BLOOM = 0.14f;
+
+    bool hovered = false;
+    bool pressed = false;
+
     CapacitiveTouchSwitch() {
         momentary = false;
         latch = true;
         // No frames needed - visual state shown by LED
         box.size = Vec(27.2f, 27.2f);
+        // We draw our own contact shadow, sized to the press state.
         if (shadow) shadow->visible = false;
     }
 
     void draw(const DrawArgs& args) override {
-        float radius = box.size.x / 2.0f;
-        float cx = box.size.x / 2.0f;
-        float cy = box.size.y / 2.0f;
+        NVGcontext* vg = args.vg;
+        ParamQuantity* pq = getParamQuantity();
+        const bool engaged = pq && pq->getValue() > 0.5f;
 
-        // Base brass gradient
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, cx, cy, radius);
-        NVGpaint base = nvgLinearGradient(args.vg, cx, cy - radius, cx, cy + radius,
-            nvgRGBA(148, 122, 82, 255), // Lighter top color
-            nvgRGBA(76, 60, 46, 255));  // Lighter bottom color
-        nvgFillPaint(args.vg, base);
-        nvgFill(args.vg);
+        const float r = box.size.x * 0.5f;
+        const float cx = box.size.x * 0.5f;
+        // Everything above the panel shifts down a touch while held.
+        const float cy = box.size.y * 0.5f + (pressed ? PRESS_SINK_PX : 0.f);
+        const float dr = r * DISH_RADIUS;
 
-        // Subtle center glow
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, cx, cy, radius * 0.95f);
-        NVGpaint centerGlow = nvgRadialGradient(args.vg,
-            cx, cy, radius * 0.1f, radius * 0.95f,
-            nvgRGBA(240, 210, 130, 110), // Brighter glow
-            nvgRGBA(100, 70, 38, 0));
-        nvgFillPaint(args.vg, centerGlow);
-        nvgFill(args.vg);
+        // Seat the pad on the panel. A tighter, darker contact patch while
+        // pressed sells the plate sitting lower.
+        drawPanelCircularSeat(vg, box.size, pressed ? 0.30f : 0.20f);
 
-        // Edge sheen
-        NVGpaint edgeSheen = nvgRadialGradient(args.vg,
-            cx, cy, radius * 0.8f, radius,
-            nvgRGBA(255, 235, 150, 48), // Brighter sheen
-            nvgRGBA(0, 0, 0, 0));
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, cx, cy, radius);
-        nvgFillPaint(args.vg, edgeSheen);
-        nvgFill(args.vg);
+        // ---- raised bezel: light at the top, dark at the bottom ----
+        nvgBeginPath(vg);
+        nvgCircle(vg, cx, cy, r);
+        NVGpaint bezel = nvgLinearGradient(vg, cx, cy - r, cx, cy + r,
+            nvgRGBA(178, 150, 102, 255),
+            nvgRGBA(62, 48, 36, 255));
+        nvgFillPaint(vg, bezel);
+        nvgFill(vg);
 
-        // Border
-        nvgBeginPath(args.vg);
-        nvgCircle(args.vg, cx, cy, radius - 0.5f);
-        nvgStrokeColor(args.vg, nvgRGBA(88, 62, 36, 160));
-        nvgStrokeWidth(args.vg, 1.0f);
-        nvgStroke(args.vg);
+        // Specular crescent on the lit shoulder. Brightens on hover, dulls
+        // when pressed (the shoulder has rotated away from the light).
+        float spec = hovered ? 0.52f : 0.32f;
+        if (pressed) spec *= 0.55f;
+        nvgBeginPath(vg);
+        nvgCircle(vg, cx, cy, r);
+        NVGpaint sheen = nvgRadialGradient(vg,
+            cx + r * LIGHT_X, cy + r * LIGHT_Y, r * 0.12f, r * 1.05f,
+            nvgRGBAf(1.f, 0.95f, 0.78f, spec), nvgRGBAf(1.f, 0.95f, 0.78f, 0.f));
+        nvgFillPaint(vg, sheen);
+        nvgFill(vg);
+
+        // ---- plate: proud at rest, dished while held ----
+        // sink drives the whole deformation. At 0 the gradient runs light-top
+        // to dark-bottom (convex, same sense as the bezel); at 1 it is
+        // inverted (concave) and the lip shadow deepens to match.
+        const float sink = pressed ? 1.f : 0.f;
+        NVGcolor plateTop = nvgLerpRGBA(nvgRGB(152, 128, 88), nvgRGB(46, 36, 26), sink);
+        NVGcolor plateBot = nvgLerpRGBA(nvgRGB(94, 76, 54), nvgRGB(128, 106, 72), sink);
+        nvgBeginPath(vg);
+        nvgCircle(vg, cx, cy, dr);
+        NVGpaint plate = nvgLinearGradient(vg, cx, cy - dr, cx, cy + dr, plateTop, plateBot);
+        nvgFillPaint(vg, plate);
+        nvgFill(vg);
+
+        // Occlusion cast by the bezel lip into the top of the plate. Kept
+        // faint at rest — a plate sitting proud catches very little of it —
+        // and driven hard by sink, where it does most of the work of selling
+        // the press.
+        nvgBeginPath(vg);
+        nvgCircle(vg, cx, cy, dr);
+        NVGpaint lip = nvgRadialGradient(vg,
+            cx, cy - dr * 0.28f, dr * 0.42f, dr * 1.04f,
+            nvgRGBAf(0.f, 0.f, 0.f, 0.f),
+            nvgRGBAf(0.f, 0.f, 0.f, 0.10f + 0.42f * sink));
+        nvgFillPaint(vg, lip);
+        nvgFill(vg);
+
+        // Grazing light along the lower inside wall, present only once the
+        // plate is dished — light bouncing off the far side of the hollow.
+        if (sink > 0.f) {
+            nvgBeginPath(vg);
+            nvgArc(vg, cx, cy, dr - 0.8f, (float)M_PI * 0.15f, (float)M_PI * 0.85f, NVG_CW);
+            nvgStrokeColor(vg, nvgRGBAf(1.f, 0.90f, 0.68f, 0.30f * sink));
+            nvgStrokeWidth(vg, 1.1f);
+            nvgStroke(vg);
+        }
+
+        // Turned-metal machining rings — fine tactile detail at close zoom.
+        for (int i = 0; i < 3; ++i) {
+            nvgBeginPath(vg);
+            nvgCircle(vg, cx, cy, dr * (0.34f + 0.21f * i));
+            nvgStrokeColor(vg, nvgRGBAf(1.f, 0.92f, 0.72f, 0.055f));
+            nvgStrokeWidth(vg, 0.6f);
+            nvgStroke(vg);
+        }
+
+        // Live-contact bloom. This is the interactive tell: it lifts under the
+        // cursor, flares on click, and holds warm while latched.
+        float bloom = BASE_BLOOM;
+        if (engaged) bloom += ENGAGED_BLOOM;
+        if (hovered) bloom += HOVER_BLOOM;
+        if (pressed) bloom += PRESS_BLOOM;
+        bloom = rack::math::clamp(bloom, 0.f, 1.f);
+        nvgBeginPath(vg);
+        nvgCircle(vg, cx, cy, dr);
+        NVGpaint glow = nvgRadialGradient(vg, cx, cy,
+            dr * 0.04f, dr * (pressed ? 0.62f : 0.88f),
+            nvgRGBAf(1.f, 0.86f, 0.55f, bloom), nvgRGBAf(1.f, 0.70f, 0.30f, 0.f));
+        nvgFillPaint(vg, glow);
+        nvgFill(vg);
+
+        // Dark step at the dish edge, then a bright hairline on the lit side of
+        // the outer rim. The pair reads as a machined shoulder.
+        nvgBeginPath(vg);
+        nvgCircle(vg, cx, cy, dr + 0.35f);
+        nvgStrokeColor(vg, nvgRGBAf(0.f, 0.f, 0.f, 0.42f));
+        nvgStrokeWidth(vg, 0.9f);
+        nvgStroke(vg);
+
+        nvgBeginPath(vg);
+        nvgArc(vg, cx, cy, r - 0.6f, (float)M_PI * 1.05f, (float)M_PI * 1.95f, NVG_CW);
+        nvgStrokeColor(vg, nvgRGBAf(1.f, 0.94f, 0.76f, hovered ? 0.55f : 0.34f));
+        nvgStrokeWidth(vg, 0.9f);
+        nvgStroke(vg);
+
+        // Outer containment ring
+        nvgBeginPath(vg);
+        nvgCircle(vg, cx, cy, r - 0.4f);
+        nvgStrokeColor(vg, nvgRGBA(74, 52, 30, 190));
+        nvgStrokeWidth(vg, 0.9f);
+        nvgStroke(vg);
+    }
+
+    void onEnter(const EnterEvent& e) override {
+        hovered = true;
+        SvgSwitch::onEnter(e);   // keeps the parameter tooltip
+    }
+
+    void onLeave(const LeaveEvent& e) override {
+        hovered = false;
+        SvgSwitch::onLeave(e);
+    }
+
+    void onDragStart(const DragStartEvent& e) override {
+        pressed = true;
+        SvgSwitch::onDragStart(e);
+    }
+
+    void onDragEnd(const DragEndEvent& e) override {
+        pressed = false;
+        SvgSwitch::onDragEnd(e);
     }
 
     void onChange(const ChangeEvent& e) override {

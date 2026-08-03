@@ -105,7 +105,7 @@ public:
 /**
  * Distortion Engine - Collection of Intense Distortion Algorithms
  * 
- * This class provides 6 different distortion types ranging from
+ * This class provides 5 different distortion types ranging from
  * aggressive clipping to complex wave manipulation.
  */
 class DistortionEngine {
@@ -123,16 +123,12 @@ private:
     float sagEnv = 0.0f;
     float sagAttackCoeff = 0.01f;  // Updated in setSampleRate()
     float sagReleaseCoeff = 0.0005f;
-
-    // Sample/hold chaos state for DESTROY, gated by an input envelope so the
-    // feedback/chaos loop dies out when the input goes silent
-    int chaosCounter = 0;
-    int chaosHold = 32;
-    float chaosTarget = 0.0f;
-    float chaosState = 0.0f;
-    float destroyEnv = 0.0f;
-    float destroyAttackCoeff = 0.02f;   // Updated in setSampleRate()
-    float destroyReleaseCoeff = 0.0003f;
+    // tubeSat() bias, as a fraction of the driven amplitude — see tubeSat().
+    // Higher values buy more 2nd harmonic when saturated but skew the duty
+    // heavily at moderate levels; 0.10 keeps the even/odd balance near neutral
+    // at ordinary drive while staying clear of HARD_CLIP when pushed.
+    static constexpr float TUBE_BIAS_FRAC = 0.10f;
+    static constexpr float TUBE_BIAS_SAG  = 0.05f;
 
     // DC blocking filter state (high-pass at ~10 Hz)
     float dcBlocker_x1 = 0.0f;
@@ -150,11 +146,25 @@ private:
     // Precomputed pre/de-emphasis filter alpha (2.5 kHz shelf, sample-rate dependent)
     float preEmphAlpha = 0.f; // Updated in setSampleRate()
 
-    // Separate feedback state for destroy() so it doesn't share with waveFold()
-    float destroyFb = 0.f;
-
     // Dither noise generator state for bit crush
     unsigned int ditherSeed = 1;
+
+    // Previous fold-map input, for the ADAA secant in waveFold()
+    float foldXPrev = 0.f;
+    // Previous post-gain clipper input, for the ADAA secant in hardClip()
+    float clipUPrev = 0.f;
+    static constexpr float CLIP_ADAA_EPS = 1e-4f;
+
+    // How much of the pre/de-emphasis pair the wavefolder gets. See process().
+    static constexpr float FOLD_EMPHASIS_SCALE = 0.0f;
+
+    // Fold gain coefficient. Was 14; ADAA on its own did not clean up the
+    // default 4x oversampling because at that depth the input crosses several
+    // fold periods per sample. 10 keeps genuine multi-fold territory while
+    // letting the ADAA work.
+    static constexpr float FOLD_GAIN = 10.0f;
+    // Below this segment length the secant is numerically useless.
+    static constexpr float FOLD_ADAA_EPS = 1e-4f;
 
 public:
     enum Type {
@@ -162,8 +172,13 @@ public:
         TUBE_SAT = 1,   // Asymmetric tube-style saturation
         WAVE_FOLD = 2,  // Multi-stage wave folding
         BIT_CRUSH = 3,  // Bit depth + sample rate reduction
-        DESTROY = 4,    // Hybrid destruction algorithm
-        RING_MOD = 5    // Ring modulation with internal oscillator
+        // DESTROY used to sit at 4. It was removed: it was built out of
+        // waveFold() into hardClip() plus a chaos loop, so it overlapped two
+        // topologies already present while contributing mostly noise, and its
+        // character shifted with every change to the folder it borrowed.
+        // RING_MOD takes index 4 so a patch that stored 5 clamps onto it and
+        // keeps the same sound.
+        RING_MOD = 4    // Ring modulation with internal oscillator
     };
     
     /**
@@ -180,13 +195,54 @@ public:
         // Tube sag: ~5 ms attack, ~150 ms release
         sagAttackCoeff = 1.0f - expf(-1.0f / (0.005f * sample_rate));
         sagReleaseCoeff = 1.0f - expf(-1.0f / (0.150f * sample_rate));
-        // Destroy input gate: ~1 ms attack, ~80 ms release
-        destroyAttackCoeff = 1.0f - expf(-1.0f / (0.001f * sample_rate));
-        destroyReleaseCoeff = 1.0f - expf(-1.0f / (0.080f * sample_rate));
     }
 
     void setRateScale(int scale) {
         rateScale = std::max(1, scale);
+    }
+
+    // How much of the pre/de-emphasis pair a given topology gets. Declared here
+    // rather than with the other members because it needs Type.
+    static inline float emphasisScale(Type type) {
+        return (type == WAVE_FOLD) ? FOLD_EMPHASIS_SCALE : 1.0f;
+    }
+
+    /**
+     * Per-topology output trim, so the five algorithms sit at matched loudness
+     * for a given drive instead of spanning 4-6 dB. The adaptive makeup in
+     * Chiaroscuro hides most of that spread, but only by working harder on the
+     * quiet topologies — and makeup gain amplifies whatever noise and residual
+     * aliasing those topologies carry, so evening the levels up front is worth
+     * doing even though the makeup would have covered it.
+     *
+     * A quadratic in drive rather than one constant: RING_MOD rises about
+     * 4.6 dB across its drive range as the carrier sweeps up, and WAVE_FOLD
+     * *fell* 3.1 dB as more of its output moved above Nyquist and was correctly
+     * discarded by the decimator. A single scalar cannot follow either.
+     *
+     * Coefficients are least-squares fits to a 9-point drive grid, each point
+     * itself averaged over six pitches from 110 Hz to 2093 Hz, targeting
+     * -2.5 dB. Deliberately low order: the measured curves have wiggles of a
+     * decibel or so (fold count crossing period boundaries, the ring-mod
+     * carrier moving through the measurement band) but those move with input
+     * frequency, so tracking them against a fixed set of tones would be
+     * precision without accuracy.
+     */
+    static inline float outputTrim(Type type, float drive) {
+        switch (type) {
+            case HARD_CLIP:
+                return 0.8474f + drive * (-0.1306f) + drive * drive * (+0.1215f);
+            case TUBE_SAT:
+                return 1.0593f + drive * (-0.2649f) + drive * drive * (+0.2331f);
+            case WAVE_FOLD:
+                return 1.2175f + drive * (+0.2933f) + drive * drive * (+0.1184f);
+            case BIT_CRUSH:
+                return 1.0588f + drive * (+0.0792f) + drive * drive * (-0.2135f);
+            case RING_MOD:
+                return 1.9424f + drive * (-0.9498f) + drive * drive * (+0.0024f);
+            default:
+                return 1.0f;
+        }
     }
 
     void seedDither(unsigned int seed) {
@@ -198,22 +254,18 @@ public:
      */
     void reset() {
         phase = 0.0f;
-        destroyFb = 0.0f;
         crushCounter = 0;
         crushHold = 1;
         crushSample = 0.0f;
         sagEnv = 0.0f;
-        chaosCounter = 0;
-        chaosHold = 32;
-        chaosTarget = 0.0f;
-        chaosState = 0.0f;
-        destroyEnv = 0.0f;
         dcBlocker_x1 = 0.0f;
         dcBlocker_y1 = 0.0f;
         dcOut_x1 = 0.0f;
         dcOut_y1 = 0.0f;
         preEmph_lp = 0.0f;
         deEmph_lp = 0.0f;
+        foldXPrev = 0.0f;
+        clipUPrev = 0.0f;
     }
     
     /**
@@ -229,7 +281,6 @@ public:
         // If drive is negligible, return a truly transparent signal. Still update
         // internal state so raising drive from zero does not start from stale filters.
         if (drive < 0.0001f) {
-            destroyFb *= 0.99f; // Slowly decay feedback state
             sagEnv *= 0.999f;
             dcBlock(input);
             dcBlockOut(input);
@@ -241,8 +292,16 @@ public:
         // DC blocking on input (high-pass ~10 Hz)
         float clean = dcBlock(input);
 
-        // Pre-emphasis: boost highs before distortion (gives more "analog" character)
-        float emphasized = preEmphasis(clean, drive);
+        // Pre-emphasis: boost highs before distortion (gives more "analog"
+        // character). Scaled per type, because it is actively harmful to the
+        // wavefolder: preEmphasis doubles everything above 2.5 kHz at full
+        // drive, and a folder's fold count scales directly with amplitude, so
+        // that boost doubles the fold traversal rate and with it the aliasing.
+        // It spent exactly the headroom the ADAA in waveFold() buys. Every
+        // other topology clips or quantises rather than folding, so the boost
+        // costs them nothing and they keep it.
+        const float emphDrive = drive * emphasisScale(type);
+        float emphasized = preEmphasis(clean, emphDrive);
 
         // Apply distortion algorithm
         float distorted;
@@ -255,9 +314,6 @@ public:
                 break;
             case BIT_CRUSH:
                 distorted = bitCrush(emphasized, drive);
-                break;
-            case DESTROY:
-                distorted = destroy(emphasized, drive);
                 break;
             case RING_MOD:
                 distorted = ringMod(emphasized, drive);
@@ -272,10 +328,17 @@ public:
 
         float centered = dcBlockOut(distorted);
 
-        // De-emphasis: cut highs after distortion to compensate for pre-emphasis
-        float deemphasized = deEmphasis(centered, drive);
+        // De-emphasis: cut highs after distortion to compensate for
+        // pre-emphasis. Must use the same scaled drive or the pair stops
+        // mirroring and the type's tonal balance shifts.
+        float deemphasized = deEmphasis(centered, emphDrive);
 
-        return deemphasized;
+        // Per-topology output trim. Note this sits after the early transparent
+        // return above, so a bypassed engine is still bit-transparent, and
+        // Chiaroscuro's own dry/wet onset crossfade covers the same drive span
+        // over which the trim first applies, so there is no step at the
+        // threshold.
+        return deemphasized * outputTrim(type, drive);
     }
     
     /**
@@ -289,7 +352,6 @@ public:
             case TUBE_SAT: return "Tube Sat";
             case WAVE_FOLD: return "Wave Fold";
             case BIT_CRUSH: return "Bit Crush";
-            case DESTROY: return "Destroy";
             case RING_MOD: return "Ring Mod";
             default: return "Unknown";
         }
@@ -394,8 +456,11 @@ private:
     // rail. Both halves have unity slope at the origin, so the stage is
     // click-free; the bias response is subtracted to keep idle DC at zero.
     static inline float tubeStage(float x, float bias) {
-        const float kPos = 0.7f;  // soft rail at +1/kPos
-        const float kNeg = 1.6f;  // hard rail at -1/kNeg
+        // Asymmetry widened from 0.7/1.6. With the stage-2 inversion removed
+        // below, the two stages now compound instead of cancelling, and this
+        // extra spread is what pulls the 2nd harmonic clear of HARD_CLIP.
+        const float kPos = 0.62f; // soft rail at +1/kPos
+        const float kNeg = 1.85f; // hard rail at -1/kNeg
         float b = x + bias;
         float y = (b >= 0.0f) ? fastTanh(kPos * b) * (1.0f / kPos)
                               : fastTanh(kNeg * b) * (1.0f / kNeg);
@@ -412,6 +477,46 @@ private:
         return 1.0f - 4.0f * fabsf(t - 0.5f);
     }
 
+    // Antiderivatives of the two fold maps, for the ADAA in waveFold().
+    //
+    // Both maps have period 4 and zero mean over a period, so their
+    // antiderivatives are themselves periodic. That buys three things: no
+    // period counting, no unbounded accumulation, and — because a zero-mean
+    // function's periodic antiderivative differs from the true one only by a
+    // zero-slope term — the definite integral stays correct even when x jumps
+    // several periods in a single sample, which is exactly the hard case.
+    //
+    // With p = frac((x+1)/4) and dx = 4 dp, integrating the triangle gives
+    //   G(p) = 2p^2 - p        for p <= 0.5
+    //          3p - 2p^2 - 1   for p >  0.5
+    // and G(0) = G(0.5) = G(1) = 0, so 4*G(p) is continuous across the wrap.
+    static inline float triFoldInt(float x) {
+        float u = (x + 1.0f) * 0.25f;
+        float p = u - std::floor(u);
+        float g = (p <= 0.5f) ? (2.0f * p * p - p) : (3.0f * p - 2.0f * p * p - 1.0f);
+        return 4.0f * g;
+    }
+
+    // The smooth map is a true sine rather than fastSin2Pi. The parabolic
+    // approximation has a discontinuous derivative at each period wrap and
+    // measured as a *worse* alias source than the triangle map, which defeats
+    // the point of anti-aliasing the fold at all. sin(2*pi*x/4) == sin(pi*x/2).
+    static inline float sinMap(float x) {
+        return std::sin((float)M_PI * x * 0.5f);
+    }
+    static inline float sinMapInt(float x) {
+        return -std::cos((float)M_PI * x * 0.5f) * (2.0f / (float)M_PI);
+    }
+
+    // The fold map and its antiderivative, as a function of the sharp/smooth
+    // morph weight.
+    static inline float foldMap(float x, float t) {
+        return rack::math::crossfade(triFold(x), sinMap(x), t);
+    }
+    static inline float foldMapInt(float x, float t) {
+        return rack::math::crossfade(triFoldInt(x), sinMapInt(x), t);
+    }
+
     // PolyBLEP residual for band-limiting carrier edges (t in samples/dt units)
     static inline float polyBlep(float t) {
         if (t >= 0.0f && t < 1.0f) {
@@ -423,59 +528,127 @@ private:
         return 0.0f;
     }
 
+    // The clipper's shape, on the post-gain variable. Odd function.
+    static inline float clipShape(float u, float a, float b, float knee, float threshold) {
+        float au = fabsf(u);
+        if (au < a) return u;
+        if (au > b) return std::copysign(threshold, u);
+        float t = (au - a) / (2.0f * knee);
+        float s = t * t * (3.0f - 2.0f * t);
+        return std::copysign(a + knee * s, u);
+    }
+
+    // Antiderivative of clipShape. The shape is odd, so its antiderivative is
+    // even and equals G(|u|) where G integrates from zero:
+    //   linear region  G = u^2/2
+    //   cubic knee     G = a^2/2 + a*(u-a) + 2*knee^2*(t^3 - t^4/2)
+    //   rail           G = G(b) + threshold*(u-b)
+    static inline float clipShapeInt(float u, float a, float b, float knee, float threshold) {
+        float au = fabsf(u);
+        if (au <= a) return 0.5f * au * au;
+        if (au >= b) {
+            float gb = 0.5f * a * a + 2.0f * a * knee + knee * knee;
+            return gb + threshold * (au - b);
+        }
+        float t = (au - a) / (2.0f * knee);
+        float t3 = t * t * t;
+        return 0.5f * a * a + a * (au - a) + 2.0f * knee * knee * (t3 - 0.5f * t3 * t);
+    }
+
     /**
      * Hard clipping with a soft-start knee.
      * The knee narrows with drive: musical saturation at the bottom of the
      * knob, razor-edged rail clipping at the top.
+     *
+     * Anti-aliased the same way as the wavefolder. A hard rail is a derivative
+     * discontinuity, so point-sampling it sprays foldback: this measured -31 dB
+     * at the default 4x oversampling, second only to WAVE_FOLD before that was
+     * fixed, and HARD_CLIP is the most reached-for topology of the six. Both the
+     * shape and its antiderivative are piecewise polynomials here, so the
+     * antiderivative is exact and costs no transcendentals.
      */
     float hardClip(float input, float drive) {
-        // Input gain
+        // A knee-primary voicing was tried here to spread the knob's usable
+        // range and measured worse on both counts, so this is the original
+        // mapping. Holding threshold at unity while sweeping the knee narrow
+        // *raises* the clipping onset (a = threshold - knee), which fights the
+        // rising gain: total harmonic energy went non-monotonic, dipping around
+        // DIST 60% before climbing again, so the knob read as more-distorted /
+        // less-distorted / more-distorted. Worse, capping the gain at 5-8x left
+        // the clipper completely linear for quiet sources (THD below -140 dB at
+        // a 0.15 input) — the shrinking threshold below is what lets a quiet
+        // signal reach the rail at all.
         float gain = 1.0f + drive * 18.0f;
-        float x = input * gain;
-
-        // Threshold reduces with drive
-        float threshold = 1.0f - drive * 0.7f;
-        threshold = std::max(threshold, 0.15f);
-
-        // Soft knee saturation before hard clip; knee narrows as drive rises
+        float threshold = std::max(1.0f - drive * 0.7f, 0.15f);
+        // Knee is always well clear of zero (>= 0.15 * 0.15), so the divisions
+        // by knee below are safe.
         float knee = threshold * (0.6f - 0.45f * drive);
-        float absX = fabsf(x);
+        float a = threshold - knee;
+        float b = threshold + knee;
 
-        float output;
-        if (absX < threshold - knee) {
-            output = x;
-        } else if (absX > threshold + knee) {
-            output = std::copysign(threshold, x);
+        float u = input * gain;
+        float du = u - clipUPrev;
+        float shaped;
+        if (fabsf(du) < CLIP_ADAA_EPS) {
+            shaped = clipShape(0.5f * (u + clipUPrev), a, b, knee, threshold);
         } else {
-            // Cubic knee
-            float t = (absX - (threshold - knee)) / (2.0f * knee);
-            float s = t * t * (3.0f - 2.0f * t);
-            output = std::copysign(threshold - knee + knee * s, x);
+            shaped = (clipShapeInt(u, a, b, knee, threshold)
+                    - clipShapeInt(clipUPrev, a, b, knee, threshold)) / du;
         }
+        clipUPrev = u;
 
         // Normalize
-        return output / threshold;
+        return shaped / threshold;
     }
 
     /**
      * Wave folding: true reflective folds (unlimited fold count), with the
      * fold tips morphing from rounded (sine map) at low drive to sharp
      * (triangle map) when pushed. A drive-scaled bias skews the folds for
-     * even harmonics. Squared gain taper keeps the low knob gentle while the
-     * top reaches deep multi-fold territory.
+     * even harmonics; the outer DC blocker strips the resulting offset. Squared
+     * gain taper keeps the low knob gentle while the top reaches deep
+     * multi-fold territory.
+     *
+     * A biasScale argument used to sit here so the removed DESTROY topology
+     * could gate the skew bias down — feeding a biased fold into a high-gain
+     * clipper pinned that clipper to a constant rail whenever the input was too
+     * small to swing the fold through zero. Nothing needs it now.
      */
     float waveFold(float input, float drive) {
-        float gain = 1.0f + drive * drive * 14.0f;
+        float gain = 1.0f + drive * drive * FOLD_GAIN;
         float bias = drive * 0.35f;
         float x = input * gain + bias;
+        // Both maps have period 4 and matching extrema, so the crossfade only
+        // changes the tip shape, not the fold positions.
+        float t = rack::math::clamp(0.65f - 0.4f * drive, 0.0f, 1.0f);
 
-        // Both maps have period 4 and matching extrema, so the crossfade
-        // only changes the tip shape, not the fold positions.
-        float sharp = triFold(x);
-        float round = fastSin2Pi(x * 0.25f);
-        float folded = rack::math::crossfade(sharp, round, 0.65f - 0.4f * drive);
+        // First-order ADAA. Point-sampling this map is what made WAVE_FOLD the
+        // dirtiest topology by a wide margin: at full drive the input crosses
+        // several fold periods per sample, and the foldback measured *louder
+        // than the signal itself* at 1x and 2x oversampling, -17 dB at the
+        // default 4x. Averaging the map over the segment actually traversed
+        // this sample, rather than sampling one point on it, took the 4x figure
+        // to about -37 dB and made 1x usable. Oversampling alone could not fix
+        // this and neither could a milder fold gain; it needed both.
+        //
+        // Both antiderivatives are recomputed each sample from the *current*
+        // map rather than caching the previous sample's value, so a moving drive
+        // cannot mix two different maps into one difference.
+        float folded;
+        float dx = x - foldXPrev;
+        if (fabsf(dx) < FOLD_ADAA_EPS) {
+            // Degenerate segment — the secant is numerically useless here, so
+            // fall back to the midpoint value.
+            folded = foldMap(0.5f * (x + foldXPrev), t);
+        } else {
+            folded = (foldMapInt(x, t) - foldMapInt(foldXPrev, t)) / dx;
+        }
+        foldXPrev = x;
 
-        // Light glue saturation; outer DC blocker removes the bias offset.
+        // Light glue saturation; outer DC blocker removes the bias offset. The
+        // tanh stays outside the ADAA: tanh(F(x)) has no closed-form
+        // antiderivative, and it is a gentle curve on an already-bounded
+        // signal, so it generates little of the aliasing.
         return fastTanh(folded * 1.1f) * 0.95f;
     }
 
@@ -506,35 +679,6 @@ private:
         }
 
         return crushSample;
-    }
-
-    // Destruction: deep asymmetric folding into chaotic feedback into hard
-    // clipping. The chaos is a slewed sample/hold voltage — a broken-machine
-    // stagger rather than a periodic warble — and the raw clipped signal is
-    // the output, so the top of the knob is genuinely vicious.
-    float destroy(float input, float drive) {
-        // Input envelope gates the feedback/chaos loop: destruction reacts to
-        // the signal and dies with it instead of free-running.
-        float level = fabsf(input);
-        float envCoeff = (level > destroyEnv) ? destroyAttackCoeff : destroyReleaseCoeff;
-        destroyEnv += (level - destroyEnv) * envCoeff;
-        float gate = rack::math::clamp(destroyEnv * 3.0f, 0.0f, 1.0f);
-
-        float x = waveFold(input, 0.35f + drive * 0.5f);
-
-        // Signal feedback plus slewed random-target chaos injection
-        float fb = 0.25f + drive * 0.45f;
-        if (++chaosCounter >= chaosHold) {
-            chaosCounter = 0;
-            chaosTarget = dither() * 2.0f * drive;
-            chaosHold = (24 + (int)((dither() + 0.5f) * 120.0f)) * rateScale;
-        }
-        chaosState += 0.05f * (chaosTarget - chaosState);
-        x += (destroyFb * fb + chaosState) * gate;
-
-        float y = hardClip(x, 0.3f + drive * 0.5f) * 0.85f;
-        destroyFb = fastTanh(y * 0.8f);
-        return y;
     }
 
     // Ring modulation with morphing carrier (sine → tri → square).
@@ -586,7 +730,22 @@ private:
         // Sag eases input gain by up to ~25% and pushes bias when hot
         float sagGain = 1.0f / (1.0f + 0.35f * drive * sagEnv);
         float gain = (1.0f + drive * 14.0f) * sagGain;
-        float bias = drive * (0.3f + 0.15f * sagEnv);
+        // Bias is a fraction of the *driven* amplitude, not an absolute offset.
+        //
+        // This is what keeps TUBE_SAT distinguishable from HARD_CLIP when both
+        // are pushed hard. Unequal rails alone cannot do it: drive a symmetric
+        // input into full saturation and you get a 50%-duty wave with plateaus
+        // at +A and -B, whose only asymmetry is a DC offset of (A-B)/2 — and the
+        // outer DC blocker removes exactly that, leaving a symmetric square with
+        // the same shape as a hard clip. Measured, the two became almost
+        // identical: 2nd harmonic -40.8 dB and duty 49.8% at the hot operating
+        // point, against hard clip's mathematically zero even harmonics.
+        //
+        // What survives DC blocking is *duty* asymmetry, and that comes from a
+        // bias applied before saturation. An absolute 0.3 was swamped once the
+        // post-gain signal reached ~42, shifting the zero crossing under 1%.
+        // Scaling with gain makes the duty shift level-independent.
+        float bias = drive * (TUBE_BIAS_FRAC + TUBE_BIAS_SAG * sagEnv) * gain;
 
         float s1 = tubeStage(input * gain, bias);
 
@@ -594,9 +753,17 @@ private:
         float sagCoeff = (level > sagEnv) ? sagAttackCoeff : sagReleaseCoeff;
         sagEnv += (level - sagEnv) * sagCoeff;
 
-        // Inverted second stage flips which half saturates hard
-        float s2 = tubeStage(-1.35f * s1, bias * 0.6f);
-        return -s2 * 0.9f;
+        // Second stage no longer inverts. Feeding it -1.35*s1 applied stage
+        // one's asymmetry to the *flipped* signal, so the two stages undid each
+        // other — and the harder it was driven the more complete the
+        // cancellation, with the 2nd harmonic falling to -81 dB at full drive.
+        // That left TUBE_SAT harmonically indistinguishable from HARD_CLIP:
+        // both were pure odd-harmonic saturators with near-identical H3/H5, and
+        // with the makeup gain matching their loudness there was nothing left
+        // to tell them apart. Compounding the stages restores the even-harmonic
+        // warmth the topology is named for.
+        float s2 = tubeStage(1.35f * s1, bias * 0.6f);
+        return s2 * 0.9f;
     }
 };
 
