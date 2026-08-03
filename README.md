@@ -69,8 +69,8 @@ A dual vintage VU meter with transparent pass-through.
   release, over a -20 dB to +3 dB dial calibrated so ±5 V peak reads 0 VU.
 - Inputs are buffered straight to the outputs, so metering can be inserted
   anywhere in a chain without disturbing it.
-- Polyphonic to 6 channels; the needle follows the peak across all active
-  channels.
+- Polyphonic cables pass through at full width; the needle follows the peak
+  across all active channels.
 
 See the [Specula manual](docs/manuals/Specula.md).
 

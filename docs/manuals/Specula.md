@@ -18,14 +18,14 @@ The metering circuit employs custom ballistics engineered to emulate the mechani
 The meter dial represents a range from -20 dB to +3 dB. The module is calibrated such that a standard Rack audio level of 10 Vpp (±5V peak) corresponds to 0 VU. 
 
 ### Polyphonic Evaluation
-Specula supports polyphonic signals of up to 6 channels per input. When a polyphonic cable is connected, the metering circuit evaluates the maximum peak voltage present across all active channels. This ensures that clipping or high-amplitude spikes on any individual channel are visibly reflected on the meter.
+Specula supports polyphonic signals of up to 16 channels per input — the full width Rack allows. When a polyphonic cable is connected, the metering circuit evaluates the maximum peak voltage present across all active channels. This ensures that clipping or high-amplitude spikes on any individual channel are visibly reflected on the meter.
 
 ### Transparent Pass-Through
 The internal routing acts as a direct, uncolored buffer. Signals patched to the inputs are duplicated at the outputs with zero latency or alteration, preserving their channel count and exact voltages.
 
 ## Connections
 
-- **LEFT / RIGHT INPUT**: Main signal inputs. Polyphonic (up to 6 channels).
+- **LEFT / RIGHT INPUT**: Main signal inputs. Polyphonic (up to 16 channels).
 - **LEFT / RIGHT OUTPUT**: Buffered duplicates of the input signals, suitable for downstream patching. 
 
 ## Calibration and Advanced Settings
@@ -41,4 +41,4 @@ Right-click the module panel to access the context menu for advanced aesthetic c
 
 ## Operating Considerations
 
-- **Channel Limit**: Note that polyphonic pass-through and metering are capped at 6 channels. Any channels present beyond the 6th will be discarded at the output.
+- **Channel Count**: Polyphonic cables pass through at their full channel count, so Specula may be inserted anywhere in a patch without narrowing the signal that leaves it.

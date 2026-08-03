@@ -6,7 +6,13 @@
 #include <cmath>
 
 struct Specula : Module {
-    static constexpr int MAX_CHANNELS = 6;
+    // Specula is an inline monitor: whatever arrives has to leave intact, so the
+    // pass-through has to reach as wide as Rack itself can. This used to be 6 —
+    // the plugin's usual voice budget — which silently dropped channels 7-16 on
+    // their way to the output. A voice budget is the right call for a module
+    // that *processes* voices; a meter that quietly narrows the cable running
+    // through it is just a hole in the patch.
+    static constexpr int MAX_CHANNELS = rack::engine::PORT_MAX_CHANNELS;
 
     enum ParamIds {
         NUM_PARAMS
